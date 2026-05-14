@@ -1,0 +1,82 @@
+<h2>Foody — System Architecture</h2>
+<p class="subtitle">How all the pieces fit together</p>
+
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 860px; margin: 0 auto;">
+
+  <!-- Users Layer -->
+  <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px;">
+    <div class="label" style="color: #94a3b8; margin-bottom: 12px;">USERS</div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <div style="flex:1; min-width:140px; background:#0f172a; border-radius:8px; padding:12px; text-align:center;">
+        <div style="font-size:24px; margin-bottom:4px;">🍽️</div>
+        <div style="font-weight:600; font-size:14px;">Food Lovers</div>
+        <div style="font-size:12px; color:#64748b; margin-top:4px;">Browse + AI Suggest</div>
+      </div>
+      <div style="flex:1; min-width:140px; background:#0f172a; border-radius:8px; padding:12px; text-align:center;">
+        <div style="font-size:24px; margin-bottom:4px;">🧑‍🍳</div>
+        <div style="font-weight:600; font-size:14px;">Food Testers</div>
+        <div style="font-size:12px; color:#64748b; margin-top:4px;">Add reviews via admin</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arrow -->
+  <div style="text-align:center; color:#64748b; font-size:20px;">↕</div>
+
+  <!-- Frontend Layer -->
+  <div style="background: #1e293b; border: 2px solid #6366f1; border-radius: 12px; padding: 20px;">
+    <div class="label" style="color: #818cf8; margin-bottom: 12px;">FRONTEND — Next.js (Vercel)</div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <div style="flex:1; min-width:120px; background:#0f172a; border-radius:8px; padding:10px; text-align:center; font-size:13px;">
+        <div style="font-size:18px; margin-bottom:4px;">🗺️</div>
+        <strong>Browse Mode</strong>
+        <div style="color:#64748b; font-size:11px; margin-top:4px;">Map + filters + cards</div>
+      </div>
+      <div style="flex:1; min-width:120px; background:#0f172a; border-radius:8px; padding:10px; text-align:center; font-size:13px;">
+        <div style="font-size:18px; margin-bottom:4px;">🤖</div>
+        <strong>AI Suggest</strong>
+        <div style="color:#64748b; font-size:11px; margin-top:4px;">Conversational input</div>
+      </div>
+      <div style="flex:1; min-width:120px; background:#0f172a; border-radius:8px; padding:10px; text-align:center; font-size:13px;">
+        <div style="font-size:18px; margin-bottom:4px;">🏪</div>
+        <strong>Restaurant Pages</strong>
+        <div style="color:#64748b; font-size:11px; margin-top:4px;">Details + dishes + ratings</div>
+      </div>
+      <div style="flex:1; min-width:120px; background:#0f172a; border-radius:8px; padding:10px; text-align:center; font-size:13px;">
+        <div style="font-size:18px; margin-bottom:4px;">🔐</div>
+        <strong>Admin Panel</strong>
+        <div style="color:#64748b; font-size:11px; margin-top:4px;">Testers add content</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arrow -->
+  <div style="text-align:center; color:#64748b; font-size:20px;">↕</div>
+
+  <!-- Backend / APIs Layer -->
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <!-- Supabase -->
+    <div style="flex:2; min-width:220px; background: #1e293b; border: 2px solid #10b981; border-radius: 12px; padding: 20px;">
+      <div class="label" style="color: #34d399; margin-bottom: 12px;">BACKEND — Supabase</div>
+      <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+        <div style="background:#0f172a; border-radius:6px; padding:8px;">🗄️ <strong>PostgreSQL</strong> — restaurants, dishes, reviews, ratings</div>
+        <div style="background:#0f172a; border-radius:6px; padding:8px;">🔑 <strong>Auth</strong> — food tester login (admin only)</div>
+        <div style="background:#0f172a; border-radius:6px; padding:8px;">🖼️ <strong>Storage</strong> — dish photos uploaded by testers</div>
+        <div style="background:#0f172a; border-radius:6px; padding:8px;">⚡ <strong>Edge Functions</strong> — AI suggestion API endpoint</div>
+      </div>
+    </div>
+
+    <!-- External APIs -->
+    <div style="flex:1; min-width:180px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px;">
+      <div class="label" style="color: #94a3b8; margin-bottom: 12px;">EXTERNAL APIs</div>
+      <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+        <div style="background:#0f172a; border-radius:6px; padding:8px;">🗺️ <strong>Google Maps</strong> — restaurant location, embed map</div>
+        <div style="background:#0f172a; border-radius:6px; padding:8px;">📍 <strong>Google Places</strong> — restaurant data, photos</div>
+        <div style="background:#0f172a; border-radius:6px; padding:8px;">🤖 <strong>Claude API</strong> — AI food suggestions</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center; color:#64748b; font-size:13px; margin-top:20px;">Does this architecture make sense? Any part you'd like to change?</p>
