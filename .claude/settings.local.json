@@ -1,10 +1,13 @@
 {
-  "enabledPlugins": {
-    "superpowers@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
-      "Bash(bash *)"
+      "Bash(bash *)",
+      "Bash(nslookup db.uftgjzfmlyvkniegawms.supabase.co)",
+      "Bash(curl -s \"https://uftgjzfmlyvkniegawms.supabase.co/rest/v1/\" -H \"apikey: sb_publishable_T_9DayX3o5jQvjDwsm_bBQ_pJX4mbOp\")",
+      "Bash(npm run *)"
     ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
   }
 }

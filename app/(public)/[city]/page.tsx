@@ -31,6 +31,7 @@ export default async function CityPage({
       dishes(name, reviews(rating))
     `)
     .eq('city_id', city.id)
+    .is('deleted_at', null)
 
   if (price) query = query.eq('price_range', parseInt(price))
   if (cuisine) query = query.contains('cuisine_type', [cuisine])

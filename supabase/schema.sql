@@ -24,7 +24,8 @@ CREATE TABLE restaurants (
   cuisine_type text[] DEFAULT '{}',
   price_range int CHECK (price_range BETWEEN 1 AND 3) DEFAULT 1,
   cover_image_url text,
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now(),
+  deleted_at timestamptz DEFAULT NULL
 );
 
 -- Dishes
@@ -35,7 +36,8 @@ CREATE TABLE dishes (
   description text,
   photo_url text,
   is_must_try boolean DEFAULT false,
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now(),
+  deleted_at timestamptz DEFAULT NULL
 );
 
 -- Testers (extends auth.users)
@@ -54,6 +56,7 @@ CREATE TABLE reviews (
   taste_notes text,
   visit_date date NOT NULL,
   created_at timestamptz DEFAULT now(),
+  deleted_at timestamptz DEFAULT NULL,
   UNIQUE(dish_id, tester_id)
 );
 

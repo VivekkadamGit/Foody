@@ -12,6 +12,7 @@ export default async function HomePage() {
       cities!inner(name, slug),
       dishes(name, is_must_try, reviews(rating))
     `)
+    .is('deleted_at', null)
     .limit(12)
 
   const enriched = (restaurants ?? [])

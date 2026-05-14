@@ -22,6 +22,7 @@ export default async function RestaurantPage({
       )
     `)
     .eq('id', restaurantId)
+    .is('deleted_at', null)
     .single()
 
   if (!restaurant || restaurant.cities.slug !== citySlug) notFound()
