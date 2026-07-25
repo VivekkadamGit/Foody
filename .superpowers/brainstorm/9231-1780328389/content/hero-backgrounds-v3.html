@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero Backgrounds — Creative</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#1A1614; font-family:system-ui,sans-serif; }
+
+  .tabs { display:flex; background:#0F0B09; border-bottom:1px solid #2A1A10; }
+  .tab { flex:1; padding:12px 8px; text-align:center; font-size:12px; font-weight:600; color:#666; cursor:pointer; border-bottom:3px solid transparent; transition:all .2s; }
+  .tab.active { color:#C8A97E; border-bottom-color:#C0432A; }
+
+  .scene { display:none; position:relative; width:100%; height:300px; overflow:hidden; }
+  .scene.active { display:block; }
+
+  canvas { position:absolute; inset:0; width:100%; height:100%; }
+
+  /* shared hero overlay */
+  .overlay { position:absolute; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; }
+  .eyebrow { color:#C8A97E; font-size:9px; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px; }
+  .overlay h1 { color:#FAF6EF; font-size:22px; font-weight:800; line-height:1.25; margin-bottom:18px; text-shadow:0 2px 20px rgba(0,0,0,.8); }
+  .sb { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 6px 28px rgba(0,0,0,.5); border:2px solid #C0432A; width:100%; max-width:380px; }
+  .sb-row { display:flex; align-items:center; padding:3px 3px 3px 12px; }
+  .sb-row input { flex:1; border:none; outline:none; padding:9px 6px; font-size:13px; color:#1A1614; background:transparent; min-width:0; }
+  .sb-row button { background:#C0432A; color:#fff; border:none; padding:10px 14px; font-size:12px; font-weight:700; border-radius:9px; cursor:pointer; }
+  .sb-tags { background:#FAF6EF; padding:5px 12px; border-top:1px solid #E8E2D9; font-size:10px; color:#888; }
+  .sb-tags span { color:#C0432A; font-weight:500; }
+
+  .desc-bar { background:#0F0B09; padding:14px 20px; border-top:1px solid #2A1A10; }
+  .desc-bar h3 { color:#FAF6EF; font-size:13px; font-weight:700; margin-bottom:4px; }
+  .desc-bar p { color:#888; font-size:12px; line-height:1.5; }
+  .badge { background:#C0432A; color:#fff; font-size:9px; font-weight:700; padding:2px 7px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+
+  .pick-btn { display:block; margin:16px auto; background:#C0432A; color:#fff; border:none; padding:11px 32px; border-radius:30px; font-size:13px; font-weight:700; cursor:pointer; }
+  .pick-btn:hover { background:#9E3520; }
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('a')">A — Lava Flow</div>
+  <div class="tab" onclick="show('b')">B — Bandhani</div>
+  <div class="tab" onclick="show('c')">C — Spotlight</div>
+</div>
+
+<!-- A: Fluid Lava / Noise Field -->
+<div class="scene active" id="scene-a">
+  <canvas id="canvas-a"></canvas>
+  <div class="overlay">
+    <p class="eyebrow">Gujarat's finest food guide</p>
+    <h1>Find your next<br>favourite dish</h1>
+    <div class="sb">
+      <div class="sb-row"><span style="font-size:14px;margin-right:4px;">🔍</span><input placeholder="Search dishes, restaurants…" readonly/><button>Search</button></div>
+      <div class="sb-tags">Popular: <span>Dal Baati</span> · <span>Sev Tameta</span> · <span>Undhiyu</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- B: Bandhani Tie-Dye -->
+<div class="scene" id="scene-b">
+  <canvas id="canvas-b"></canvas>
+  <div class="overlay">
+    <p class="eyebrow">Gujarat's finest food guide</p>
+    <h1>Find your next<br>favourite dish</h1>
+    <div class="sb">
+      <div class="sb-row"><span style="font-size:14px;margin-right:4px;">🔍</span><input placeholder="Search dishes, restaurants…" readonly/><button>Search</button></div>
+      <div class="sb-tags">Popular: <span>Dal Baati</span> · <span>Sev Tameta</span> · <span>Undhiyu</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- C: Cinematic Spotlight -->
+<div class="scene" id="scene-c">
+  <canvas id="canvas-c"></canvas>
+  <div class="overlay">
+    <p class="eyebrow">Gujarat's finest food guide</p>
+    <h1>Find your next<br>favourite dish</h1>
+    <div class="sb">
+      <div class="sb-row"><span style="font-size:14px;margin-right:4px;">🔍</span><input placeholder="Search dishes, restaurants…" readonly/><button>Search</button></div>
+      <div class="sb-tags">Popular: <span>Dal Baati</span> · <span>Sev Tameta</span> · <span>Undhiyu</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="desc-bar" id="desc">
+  <h3>A — Molten Lava Flow <span class="badge">Dramatic</span></h3>
+  <p>Generative noise field drives hundreds of particles flowing like molten spices — deep red, ember orange, smoked charcoal. Alive and hypnotic.</p>
+</div>
+<button class="pick-btn" onclick="pick()">Pick this one →</button>
+
+<script>
+// ── Utilities ──────────────────────────────────────────────
+function noise(x, y, t) {
+  // Simple smooth noise approximation
+  const X = Math.floor(x), Y = Math.floor(y);
+  const xf = x - X, yf = y - Y;
+  const u = xf*xf*(3-2*xf), v = yf*yf*(3-2*yf);
+  const hash = (n) => Math.sin(n * 127.1 + t * 43.8) * 43758.5453 % 1;
+  const a = hash(X + Y*57), b = hash(X+1 + Y*57);
+  const c = hash(X + (Y+1)*57), d = hash(X+1 + (Y+1)*57);
+  return a + (b-a)*u + (c-a)*v + (a-b-c+d)*u*v;
+}
+
+// ── A: Particle Lava ────────────────────────────────────────
+(function(){
+  const canvas = document.getElementById('canvas-a');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [], t = 0;
+  const COLORS = ['#C0432A','#8B2A18','#E8643C','#C8A97E','#3A1A0A','#D4614A'];
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  function init() {
+    resize();
+    particles = [];
+    for (let i = 0; i < 320; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        size: Math.random() * 2.5 + 0.5,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        speed: Math.random() * 0.8 + 0.3,
+        life: Math.random(),
+      });
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = 'rgba(15,11,9,0.18)';
+    ctx.fillRect(0, 0, W, H);
+    t += 0.003;
+
+    for (const p of particles) {
+      const angle = noise(p.x / 180, p.y / 180, t) * Math.PI * 4;
+      p.x += Math.cos(angle) * p.speed;
+      p.y += Math.sin(angle) * p.speed;
+      p.life += 0.004;
+
+      // wrap
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+
+      const alpha = 0.4 + 0.6 * Math.abs(Math.sin(p.life));
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+
+  init();
+  draw();
+  window.addEventListener('resize', init);
+})();
+
+// ── B: Bandhani Tie-Dye ─────────────────────────────────────
+(function(){
+  const canvas = document.getElementById('canvas-b');
+  const ctx = canvas.getContext('2d');
+  let W, H, t = 0;
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  const rings = [];
+  function initRings() {
+    rings.length = 0;
+    const cols = 7, rows = 5;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        rings.push({
+          cx: (c + 0.5) * (W / cols),
+          cy: (r + 0.5) * (H / rows),
+          phase: Math.random() * Math.PI * 2,
+          maxR: Math.min(W/cols, H/rows) * 0.55,
+        });
+      }
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = '#1A0A06';
+    ctx.fillRect(0, 0, W, H);
+    t += 0.018;
+
+    for (const ring of rings) {
+      const pulse = 0.5 + 0.5 * Math.sin(t + ring.phase);
+      const numRings = 7;
+      for (let i = numRings; i >= 0; i--) {
+        const frac = i / numRings;
+        const r = ring.maxR * frac * (0.85 + 0.15 * pulse);
+        const hue = frac;
+        let color;
+        if (frac < 0.2)       color = `rgba(15,8,5,${0.9})`;
+        else if (frac < 0.45) color = `rgba(192,67,42,${0.15 + 0.25*pulse*(1-frac)})`;
+        else if (frac < 0.7)  color = `rgba(200,169,126,${0.08 + 0.12*pulse})`;
+        else                   color = `rgba(58,26,10,${0.1})`;
+
+        ctx.beginPath();
+        ctx.arc(ring.cx, ring.cy, r, 0, Math.PI*2);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        // dot ring at each band
+        if (i > 0 && i < numRings) {
+          const dotCount = 6 + i * 2;
+          for (let d = 0; d < dotCount; d++) {
+            const angle = (d / dotCount) * Math.PI * 2 + t * 0.3 * (i % 2 ? 1 : -1) + ring.phase;
+            const dx = ring.cx + r * Math.cos(angle);
+            const dy = ring.cy + r * Math.sin(angle);
+            ctx.beginPath();
+            ctx.arc(dx, dy, 1.2, 0, Math.PI*2);
+            ctx.fillStyle = i % 2 === 0 ? `rgba(192,67,42,${0.5+0.4*pulse})` : `rgba(200,169,126,${0.4+0.3*pulse})`;
+            ctx.fill();
+          }
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  initRings();
+  draw();
+  window.addEventListener('resize', () => { resize(); initRings(); });
+})();
+
+// ── C: Cinematic Spotlight ───────────────────────────────────
+(function(){
+  const canvas = document.getElementById('canvas-c');
+  const ctx = canvas.getContext('2d');
+  let W, H, t = 0;
+
+  // Draw a rich textured "food" background using noise
+  let bgCanvas, bgCtx;
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+    buildBg();
+  }
+
+  function buildBg() {
+    bgCanvas = document.createElement('canvas');
+    bgCanvas.width = W; bgCanvas.height = H;
+    bgCtx = bgCanvas.getContext('2d');
+
+    // Rich warm spice texture
+    const img = bgCtx.createImageData(W, H);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const n1 = noise(x/40, y/40, 0);
+        const n2 = noise(x/15, y/15, 5);
+        const n  = n1 * 0.7 + n2 * 0.3;
+        const i  = (y * W + x) * 4;
+        // Map noise → spice colors: dark red-brown with golden streaks
+        img.data[i]   = Math.floor(60  + n * 160);   // R
+        img.data[i+1] = Math.floor(15  + n * 50);    // G
+        img.data[i+2] = Math.floor(5   + n * 30);    // B
+        img.data[i+3] = 255;
+      }
+    }
+    bgCtx.putImageData(img, 0, 0);
+  }
+
+  function draw() {
+    t += 0.008;
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw texture
+    if (bgCanvas) ctx.drawImage(bgCanvas, 0, 0);
+
+    // Spotlight that slowly drifts
+    const sx = W * (0.3 + 0.4 * Math.sin(t * 0.7));
+    const sy = H * (0.35 + 0.3 * Math.sin(t * 0.5 + 1));
+    const spotR = Math.min(W, H) * 0.38;
+
+    // Dark vignette everywhere except the spotlight
+    const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, spotR);
+    grad.addColorStop(0,   'rgba(0,0,0,0)');
+    grad.addColorStop(0.55,'rgba(0,0,0,0.15)');
+    grad.addColorStop(1,   'rgba(0,0,0,0.88)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Warm glow ring at spotlight center
+    const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, spotR * 0.4);
+    glow.addColorStop(0,   'rgba(200,169,126,0.12)');
+    glow.addColorStop(0.6, 'rgba(192,67,42,0.06)');
+    glow.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  draw();
+  window.addEventListener('resize', resize);
+})();
+
+// ── Tab switching ────────────────────────────────────────────
+const descs = {
+  a: { title:'A — Molten Lava Flow', badge:'Dramatic',  text:'Generative noise field drives hundreds of particles flowing like molten spices — deep red, ember orange, smoked charcoal. Alive and hypnotic.' },
+  b: { title:'B — Bandhani Tie-Dye', badge:'Cultural',  text:'Animated Bandhani rings — Gujarat\'s most iconic textile pattern — pulse and breathe in spice red and gold. Deeply rooted in Gujarati culture.' },
+  c: { title:'C — Cinematic Spotlight', badge:'Cinematic', text:'A roaming light reveals a rich spice-texture beneath the darkness — like a torch sweeping over a table of ingredients. Dramatic and premium.' },
+};
+
+function show(id) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('scene-'+id).classList.add('active');
+  document.querySelectorAll('.tab')[{a:0,b:1,c:2}[id]].classList.add('active');
+  const d = descs[id];
+  document.getElementById('desc').innerHTML = `<h3>${d.title} <span class="badge">${d.badge}</span></h3><p>${d.text}</p>`;
+  window._picked = id;
+}
+
+let _picked = 'a';
+function pick() {
+  if (window.__claude_helper) window.__claude_helper.select(_picked, descs[_picked].title);
+  document.querySelector('.pick-btn').textContent = '✓ Picked! Tell me in chat too';
+  document.querySelector('.pick-btn').style.background = '#2D6A2D';
+}
+
+window._picked = 'a';
+</script>
+</body>
+</html>

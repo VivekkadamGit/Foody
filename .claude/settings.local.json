@@ -4,7 +4,8 @@
       "Bash(bash *)",
       "Bash(nslookup db.uftgjzfmlyvkniegawms.supabase.co)",
       "Bash(curl -s \"https://uftgjzfmlyvkniegawms.supabase.co/rest/v1/\" -H \"apikey: sb_publishable_T_9DayX3o5jQvjDwsm_bBQ_pJX4mbOp\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(python3 -m json.tool)"
     ]
   },
   "enabledPlugins": {

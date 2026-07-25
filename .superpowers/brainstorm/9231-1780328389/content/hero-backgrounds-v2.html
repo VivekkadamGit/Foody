@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero Backgrounds — Creative</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #F5F0E8; font-family: system-ui, sans-serif; padding: 24px; }
+  h2 { font-size: 20px; color: #1A1614; margin-bottom: 6px; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 28px; }
+  .grid { display: flex; flex-direction: column; gap: 32px; }
+  .option { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s; }
+  .option:hover { border-color: #C0432A; }
+  .option.selected { border-color: #C0432A; box-shadow: 0 0 0 2px #C0432A; }
+  .label { background: #fff; padding: 14px 20px; }
+  .label h3 { font-size: 14px; font-weight: 700; color: #1A1614; margin-bottom: 3px; }
+  .label p { font-size: 12px; color: #888; line-height: 1.5; }
+  .badge { display: inline-block; background: #C0432A; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 6px; vertical-align: middle; }
+
+  /* Shared hero shell */
+  .hero { position: relative; min-height: 230px; overflow: hidden; }
+  .hero-content { position: relative; z-index: 5; padding: 34px 24px 30px; text-align: center; }
+  .eyebrow { color: #C8A97E; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+  .hero-content h1 { color: #FAF6EF; font-size: 21px; font-weight: 800; line-height: 1.25; margin-bottom: 20px; text-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+  .search-box { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,0.4); border: 2px solid #C0432A; max-width: 400px; margin: 0 auto; }
+  .search-inner { display: flex; align-items: center; padding: 4px 4px 4px 14px; gap: 8px; }
+  .search-inner input { flex: 1; border: none; outline: none; padding: 9px 0; font-size: 13px; color: #1A1614; background: transparent; min-width: 0; }
+  .search-inner button { background: #C0432A; color: #fff; border: none; padding: 10px 16px; font-size: 12px; font-weight: 700; cursor: pointer; border-radius: 8px; white-space: nowrap; }
+  .search-tags { background: #FAF6EF; padding: 6px 14px; border-top: 1px solid #E8E2D9; font-size: 10px; color: #888; }
+  .search-tags span { color: #C0432A; font-weight: 500; margin: 0 2px; }
+
+  /* ══ A: Rangoli Mandala ══ */
+  .bg-a { background: #0F0B09; }
+  .mandala-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0.22; }
+  .mandala { animation: spin 40s linear infinite; transform-origin: center; }
+  .mandala-inner { animation: spin 24s linear infinite reverse; transform-origin: center; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ══ B: Bokeh Lights ══ */
+  .bg-b { background: radial-gradient(ellipse at 40% 60%, #2C1A10 0%, #0F0B09 70%); }
+  .bokeh { position: absolute; inset: 0; }
+  .dot {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(18px);
+    animation: drift linear infinite;
+  }
+  @keyframes drift {
+    0%   { transform: translate(0, 0) scale(1);   opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 0.7; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(var(--ts)); opacity: 0; }
+  }
+  .d1  { width:80px;  height:80px;  background:#C0432A; left:8%;  top:60%; --tx:20px;  --ty:-120px; --ts:1.3; animation-duration:7s;  animation-delay:0s;   opacity:0; }
+  .d2  { width:50px;  height:50px;  background:#C8A97E; left:25%; top:70%; --tx:-10px; --ty:-100px; --ts:0.8; animation-duration:9s;  animation-delay:1.5s; opacity:0; }
+  .d3  { width:100px; height:100px; background:#3A1A0A; left:50%; top:80%; --tx:30px;  --ty:-140px; --ts:1.5; animation-duration:11s; animation-delay:0.5s; opacity:0; }
+  .d4  { width:60px;  height:60px;  background:#C0432A; left:70%; top:65%; --tx:-20px; --ty:-110px; --ts:1.1; animation-duration:8s;  animation-delay:2.5s; opacity:0; }
+  .d5  { width:40px;  height:40px;  background:#C8A97E; left:85%; top:75%; --tx:10px;  --ty:-90px;  --ts:0.9; animation-duration:6s;  animation-delay:3.5s; opacity:0; }
+  .d6  { width:70px;  height:70px;  background:#8B2A18; left:15%; top:50%; --tx:15px;  --ty:-80px;  --ts:1.2; animation-duration:10s; animation-delay:1s;   opacity:0; }
+  .d7  { width:45px;  height:45px;  background:#C8A97E; left:60%; top:55%; --tx:-25px; --ty:-95px;  --ts:0.7; animation-duration:7.5s;animation-delay:4s;   opacity:0; }
+  .d8  { width:90px;  height:90px;  background:#C0432A; left:38%; top:85%; --tx:5px;   --ty:-160px; --ts:1.4; animation-duration:12s; animation-delay:2s;   opacity:0; }
+
+  /* ══ C: Waterfall Dish Names ══ */
+  .bg-c { background: #1A1614; }
+  .text-rain { position: absolute; inset: 0; overflow: hidden; opacity: 0.12; }
+  .col { position: absolute; top: 0; display: flex; flex-direction: column; gap: 14px; animation: rainFall linear infinite; white-space: nowrap; }
+  .col span { font-size: 11px; color: #C8A97E; font-weight: 600; letter-spacing: 1px; display: block; }
+  @keyframes rainFall {
+    from { transform: translateY(-100%); }
+    to   { transform: translateY(100%); }
+  }
+  .col1  { left: 2%;  animation-duration: 14s; animation-delay: 0s; }
+  .col2  { left: 12%; animation-duration: 18s; animation-delay: -5s; }
+  .col3  { left: 22%; animation-duration: 12s; animation-delay: -8s; }
+  .col4  { left: 33%; animation-duration: 16s; animation-delay: -2s; }
+  .col5  { left: 44%; animation-duration: 20s; animation-delay: -11s; }
+  .col6  { left: 55%; animation-duration: 13s; animation-delay: -4s; }
+  .col7  { left: 66%; animation-duration: 17s; animation-delay: -7s; }
+  .col8  { left: 77%; animation-duration: 15s; animation-delay: -1s; }
+  .col9  { left: 88%; animation-duration: 19s; animation-delay: -9s; }
+
+  /* ══ D: Morphing Blob ══ */
+  .bg-d { background: #0F0B09; }
+  .blobs { position: absolute; inset: 0; filter: blur(0px); }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    mix-blend-mode: screen;
+    animation: morph ease-in-out infinite alternate;
+  }
+  .blob1 { width:220px; height:180px; background:rgba(192,67,42,0.55);  left:-40px; top:-20px; animation-duration:7s;  animation-delay:0s; }
+  .blob2 { width:180px; height:220px; background:rgba(200,169,126,0.3); right:-30px; top:10px; animation-duration:9s;  animation-delay:-2s; }
+  .blob3 { width:200px; height:160px; background:rgba(90,20,10,0.6);    left:30%;   bottom:-30px; animation-duration:11s; animation-delay:-4s; }
+  .blob4 { width:150px; height:150px; background:rgba(192,67,42,0.35);  right:20%;  bottom:0; animation-duration:8s;  animation-delay:-1s; }
+  @keyframes morph {
+    0%   { border-radius: 60% 40% 70% 30% / 50% 60% 40% 50%; transform: scale(1)   rotate(0deg); }
+    33%  { border-radius: 40% 70% 30% 60% / 70% 30% 60% 40%; transform: scale(1.08) rotate(5deg); }
+    66%  { border-radius: 70% 30% 50% 50% / 30% 70% 50% 60%; transform: scale(0.95) rotate(-4deg); }
+    100% { border-radius: 50% 60% 40% 70% / 60% 40% 70% 30%; transform: scale(1.05) rotate(3deg); }
+  }
+  .bg-d::after { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.35); z-index:1; }
+</style>
+</head>
+<body>
+  <h2>Hero Backgrounds — Creative Edition</h2>
+  <p class="subtitle">Four more creative animated backgrounds. Click the one that feels right.</p>
+
+  <div class="grid">
+
+    <!-- A: Rangoli -->
+    <div class="option" id="opt-a" onclick="selectOption('a')">
+      <div class="hero bg-a">
+        <div class="mandala-wrap">
+          <svg class="mandala" width="500" height="500" viewBox="0 0 500 500">
+            <g transform="translate(250,250)">
+              <!-- Outer ring -->
+              <g class="mandala-inner">
+                <circle r="230" fill="none" stroke="#C0432A" stroke-width="1" stroke-dasharray="8 6"/>
+                <circle r="200" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
+                <!-- Petals outer -->
+                <g>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(0) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(30) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(60) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(90) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(120) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(150) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(180) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(210) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(240) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(270) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(300) translate(0,-155)"/>
+                  <ellipse rx="18" ry="60" fill="none" stroke="#C0432A" stroke-width="1.5" transform="rotate(330) translate(0,-155)"/>
+                </g>
+              </g>
+              <!-- Middle ring -->
+              <g class="mandala">
+                <circle r="140" fill="none" stroke="#C8A97E" stroke-width="1" stroke-dasharray="4 4"/>
+                <g>
+                  <ellipse rx="12" ry="40" fill="rgba(192,67,42,0.3)" stroke="#C8A97E" stroke-width="1" transform="rotate(0) translate(0,-100)"/>
+                  <ellipse rx="12" ry="40" fill="rgba(192,67,42,0.3)" stroke="#C8A97E" stroke-width="1" transform="rotate(45) translate(0,-100)"/>
+                  <ellipse rx="12" ry="40" fill="rgba(192,67,42,0.3)" stroke="#C8A97E" stroke-width="1" transform="rotate(90) translate(0,-100)"/>
+                  <ellipse rx="12" ry="40" fill="rgba(192,67,42,0.3)" stroke="#C8A97E" stroke-width="1" transform="rotate(135) translate(0,-100)"/>
+                  <ellipse rx="12" ry="40" fill="rgba(192,67,42,0.3)" stroke="#C8A97E" stroke-width="1" transform="rotate(180) translate(0,-100)"/>
+                  <ellipse rx="12" ry="40" fill="rgba(192,67,42,0.3)" stroke="#C8A97E" stroke-width="1" transform="rotate(225) translate(0,-100)"/>
+                  <ellipse rx="12" ry="40" fill="rgba(192,67,42,0.3)" stroke="#C8A97E" stroke-width="1" transform="rotate(270) translate(0,-100)"/>
+                  <ellipse rx="12" ry="40" fill="rgba(192,67,42,0.3)" stroke="#C8A97E" stroke-width="1" transform="rotate(315) translate(0,-100)"/>
+                </g>
+              </g>
+              <!-- Inner -->
+              <circle r="55" fill="none" stroke="#C0432A" stroke-width="1.5"/>
+              <circle r="35" fill="rgba(192,67,42,0.15)" stroke="#C8A97E" stroke-width="1"/>
+              <circle r="12" fill="rgba(192,67,42,0.4)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="hero-content">
+          <p class="eyebrow">Gujarat's finest food guide</p>
+          <h1>Find your next<br>favourite dish</h1>
+          <div class="search-box">
+            <div class="search-inner"><span>🔍</span><input placeholder="Search dishes, restaurants…" readonly/><button>Search</button></div>
+            <div class="search-tags">Popular: <span>Dal Baati</span>·<span>Sev Tameta</span>·<span>Undhiyu</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">
+        <h3>A — Rangoli Mandala <span class="badge">Cultural</span></h3>
+        <p>A slowly rotating mandala/rangoli pattern behind the hero. Rooted in Gujarati art — elegant and unmistakably Indian without being cliché.</p>
+      </div>
+    </div>
+
+    <!-- B: Bokeh -->
+    <div class="option" id="opt-b" onclick="selectOption('b')">
+      <div class="hero bg-b">
+        <div class="bokeh">
+          <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div>
+          <div class="dot d4"></div><div class="dot d5"></div><div class="dot d6"></div>
+          <div class="dot d7"></div><div class="dot d8"></div>
+        </div>
+        <div class="hero-content">
+          <p class="eyebrow">Gujarat's finest food guide</p>
+          <h1>Find your next<br>favourite dish</h1>
+          <div class="search-box">
+            <div class="search-inner"><span>🔍</span><input placeholder="Search dishes, restaurants…" readonly/><button>Search</button></div>
+            <div class="search-tags">Popular: <span>Dal Baati</span>·<span>Sev Tameta</span>·<span>Undhiyu</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">
+        <h3>B — Bokeh Embers <span class="badge">Premium</span></h3>
+        <p>Blurred glowing orbs in spice red and warm gold drift upward like embers from a dhaba fire. Very premium — like high-end restaurant ambiance.</p>
+      </div>
+    </div>
+
+    <!-- C: Waterfall text -->
+    <div class="option" id="opt-c" onclick="selectOption('c')">
+      <div class="hero bg-c">
+        <div class="text-rain">
+          <div class="col col1"><span>Undhiyu</span><span>Dal Baati</span><span>Dhokla</span><span>Thepla</span><span>Khandvi</span><span>Fafda</span></div>
+          <div class="col col2"><span>Sev Tameta</span><span>Mohanthal</span><span>Basundi</span><span>Shrikhand</span></div>
+          <div class="col col3"><span>Jalebi</span><span>Gathiya</span><span>Khichu</span><span>Patra</span><span>Handvo</span></div>
+          <div class="col col4"><span>Dabeli</span><span>Locho</span><span>Ghughra</span><span>Chakri</span><span>Sev Khamani</span></div>
+          <div class="col col5"><span>Aamras</span><span>Kadhi</span><span>Ringan</span><span>Methi Thepla</span></div>
+          <div class="col col6"><span>Surti Undhiyu</span><span>Ponk Vada</span><span>Papdi</span><span>Bhel</span></div>
+          <div class="col col7"><span>Muthia</span><span>Rasawala</span><span>Olo</span><span>Vaghareli Khichdi</span></div>
+          <div class="col col8"><span>Srikhand</span><span>Basundi</span><span>Kopra Pak</span><span>Mohanthal</span></div>
+          <div class="col col9"><span>Fafda Jalebi</span><span>Ghughra</span><span>Magas</span><span>Sev</span></div>
+        </div>
+        <div class="hero-content">
+          <p class="eyebrow">Gujarat's finest food guide</p>
+          <h1>Find your next<br>favourite dish</h1>
+          <div class="search-box">
+            <div class="search-inner"><span>🔍</span><input placeholder="Search dishes, restaurants…" readonly/><button>Search</button></div>
+            <div class="search-tags">Popular: <span>Dal Baati</span>·<span>Sev Tameta</span>·<span>Undhiyu</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">
+        <h3>C — Dish Name Waterfall <span class="badge">Unique</span></h3>
+        <p>Names of real Gujarati dishes rain down like a menu in the background. Instantly communicates "this is a food discovery app" — nothing else looks like this.</p>
+      </div>
+    </div>
+
+    <!-- D: Morphing Blobs -->
+    <div class="option" id="opt-d" onclick="selectOption('d')">
+      <div class="hero bg-d">
+        <div class="blobs">
+          <div class="blob blob1"></div><div class="blob blob2"></div>
+          <div class="blob blob3"></div><div class="blob blob4"></div>
+        </div>
+        <div class="hero-content" style="position:relative;z-index:5;">
+          <p class="eyebrow">Gujarat's finest food guide</p>
+          <h1>Find your next<br>favourite dish</h1>
+          <div class="search-box">
+            <div class="search-inner"><span>🔍</span><input placeholder="Search dishes, restaurants…" readonly/><button>Search</button></div>
+            <div class="search-tags">Popular: <span>Dal Baati</span>·<span>Sev Tameta</span>·<span>Undhiyu</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">
+        <h3>D — Morphing Spice Blobs <span class="badge">Modern</span></h3>
+        <p>Organic, lava-lamp-style blobs in spice red and gold slowly morph and breathe. Very modern and tactile — feels alive without being distracting.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function selectOption(id) {
+      document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+      document.getElementById('opt-' + id).classList.add('selected');
+      if (window.__claude_helper) window.__claude_helper.select(id, 'Option ' + id.toUpperCase());
+    }
+  </script>
+</body>
+</html>

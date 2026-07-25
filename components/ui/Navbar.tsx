@@ -1,39 +1,53 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
-export default function Navbar() {
+type City = { name: string; slug: string }
+
+export default function Navbar({ cities }: { cities?: City[] }) {
   const pathname = usePathname()
 
   return (
-    <nav className="bg-white border-b border-orange-100 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl">🍽️</span>
-          <span className="text-xl font-bold text-orange-600">Foody</span>
+    <div className="fixed top-4 left-0 right-0 z-50 px-5 pointer-events-none">
+      <nav
+        className="pointer-events-auto max-w-6xl mx-auto flex items-center justify-between px-5 h-[58px] rounded-full border border-warm-200 bg-cream/90 backdrop-blur-md"
+        style={{ boxShadow: '0 4px 28px rgba(26, 22, 20, 0.10), 0 1px 4px rgba(26, 22, 20, 0.06)' }}
+      >
+        <Link href="/" className="flex-shrink-0">
+          <Image
+            src="/logo.png"
+            alt="Foody"
+            width={96}
+            height={32}
+            className="object-contain"
+          />
         </Link>
-        <div className="flex items-center gap-6 text-sm font-medium">
-          <Link
-            href="/surat"
-            className={`hover:text-orange-600 transition-colors ${pathname.startsWith('/surat') ? 'text-orange-600' : 'text-gray-600'}`}
-          >
-            Surat
-          </Link>
-          <Link
-            href="/vadodara"
-            className={`hover:text-orange-600 transition-colors ${pathname.startsWith('/vadodara') ? 'text-orange-600' : 'text-gray-600'}`}
-          >
-            Vadodara
-          </Link>
+
+        <div className="flex items-center gap-7">
+          {cities?.map((city) => (
+            <Link
+              key={city.slug}
+              href={`/${city.slug}`}
+              className="font-body text-sm text-muted hover:text-charcoal transition-colors duration-150"
+            >
+              {city.name}
+            </Link>
+          ))}
+
           <Link
             href="/suggest"
-            className={`hover:text-orange-600 transition-colors ${pathname === '/suggest' ? 'text-orange-600' : 'text-gray-600'}`}
+            className={`font-body text-sm font-semibold px-5 py-2 rounded-full transition-all duration-150 ${
+              pathname === '/suggest'
+                ? 'bg-spice text-cream'
+                : 'bg-charcoal text-cream hover:bg-spice'
+            }`}
           >
-            🤖 AI Suggest
+            AI Suggest
           </Link>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   )
 }

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foody — Footer Designs</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#E8E2D9; font-family:'DM Sans',system-ui,sans-serif; padding:40px 24px; display:flex; flex-direction:column; gap:48px; }
+.label { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:10px; }
+.badge { display:inline-block; background:#C0432A; color:#fff; font-size:10px; font-weight:700; padding:2px 9px; border-radius:20px; margin-left:8px; vertical-align:middle; }
+
+/* ══ A: Minimal Dark ══ */
+.footer-a {
+  background:#1A1614;
+  padding:40px 60px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:20px;
+  border-radius:16px;
+}
+.footer-a .logo { color:#C8A97E; font-family:'Playfair Display',serif; font-size:22px; font-weight:800; }
+.footer-a .tagline { color:#555; font-size:12px; margin-top:4px; }
+.footer-a .links { display:flex; gap:28px; }
+.footer-a .links a { color:#666; font-size:13px; text-decoration:none; transition:color .2s; cursor:pointer; }
+.footer-a .links a:hover { color:#C8A97E; }
+.footer-a .copy { color:#333; font-size:11px; text-align:right; }
+.footer-a .copy span { color:#C0432A; }
+
+/* ══ B: Rich 3-Column ══ */
+.footer-b {
+  background:#1A1614;
+  border-radius:16px;
+  overflow:hidden;
+}
+.footer-b-top {
+  padding:48px 60px;
+  display:grid;
+  grid-template-columns:1.6fr 1fr 1fr;
+  gap:40px;
+  border-bottom:1px solid #2C2420;
+}
+.footer-b .brand-name { color:#C8A97E; font-family:'Playfair Display',serif; font-size:24px; font-weight:800; margin-bottom:8px; }
+.footer-b .brand-desc { color:#555; font-size:13px; line-height:1.7; max-width:260px; }
+.footer-b .col-title { color:#FAF6EF; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:16px; }
+.footer-b .col-links { display:flex; flex-direction:column; gap:10px; }
+.footer-b .col-links a { color:#666; font-size:13px; text-decoration:none; cursor:pointer; }
+.footer-b .col-links a:hover { color:#C8A97E; }
+.footer-b-bottom {
+  padding:16px 60px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.footer-b-bottom p { color:#333; font-size:11px; }
+.footer-b-bottom span { color:#C0432A; }
+
+/* ══ C: Warm Card ══ */
+.footer-c {
+  background:linear-gradient(135deg,#FAF0E0 0%,#F5E8D0 100%);
+  border-radius:16px;
+  border:1px solid #E0D0B8;
+  padding:0;
+  overflow:hidden;
+}
+.footer-c-top {
+  padding:48px 60px;
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr;
+  gap:40px;
+  border-bottom:1px solid #E0D0B8;
+}
+.footer-c .brand-name { color:#1A1614; font-family:'Playfair Display',serif; font-size:26px; font-weight:800; margin-bottom:6px; }
+.footer-c .brand-tag { display:inline-block; background:#C0432A; color:#fff; font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:12px; }
+.footer-c .brand-desc { color:#8B7B6A; font-size:13px; line-height:1.7; max-width:280px; }
+.footer-c .col-title { color:#1A1614; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; }
+.footer-c .col-links { display:flex; flex-direction:column; gap:10px; }
+.footer-c .col-links a { color:#8B7B6A; font-size:13px; text-decoration:none; cursor:pointer; }
+.footer-c .col-links a:hover { color:#C0432A; }
+.footer-c-bottom {
+  padding:16px 60px;
+  display:flex; justify-content:space-between; align-items:center;
+  background:#EEE0C8;
+}
+.footer-c-bottom p { color:#8B7B6A; font-size:11px; }
+
+/* ══ D: Bold Spice ══ */
+.footer-d {
+  background:#C0432A;
+  border-radius:16px;
+  padding:56px 60px 32px;
+}
+.footer-d-top {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:40px;
+  padding-bottom:32px;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+  margin-bottom:24px;
+}
+.footer-d .brand-name { color:#FAF6EF; font-family:'Playfair Display',serif; font-size:26px; font-weight:800; margin-bottom:8px; }
+.footer-d .brand-desc { color:rgba(255,255,255,0.6); font-size:13px; line-height:1.7; max-width:260px; }
+.footer-d .col-title { color:rgba(255,255,255,0.5); font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; }
+.footer-d .col-links { display:flex; flex-direction:column; gap:10px; }
+.footer-d .col-links a { color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; cursor:pointer; }
+.footer-d .col-links a:hover { color:#fff; }
+.footer-d-bottom { display:flex; justify-content:space-between; align-items:center; }
+.footer-d-bottom p { color:rgba(255,255,255,0.4); font-size:11px; }
+.footer-d .cities { display:flex; gap:10px; flex-wrap:wrap; }
+.footer-d .city-pill {
+  background:rgba(255,255,255,0.12); color:#FAF6EF;
+  font-size:11px; font-weight:600; padding:4px 12px; border-radius:20px;
+  text-decoration:none; cursor:pointer;
+}
+
+/* ══ E: Magazine Strip ══ */
+.footer-e {
+  background:#1A1614;
+  border-radius:16px;
+  overflow:hidden;
+}
+.footer-e-band {
+  background:#C0432A;
+  padding:20px 60px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.footer-e-band .cta-text { color:#fff; font-family:'Playfair Display',serif; font-size:18px; font-weight:700; }
+.footer-e-band .cta-btn {
+  background:#FAF6EF; color:#C0432A; font-size:12px; font-weight:700;
+  padding:10px 22px; border-radius:30px; text-decoration:none; cursor:pointer;
+  letter-spacing:.05em; text-transform:uppercase; flex-shrink:0;
+}
+.footer-e-main {
+  padding:36px 60px;
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr;
+  gap:40px;
+  border-bottom:1px solid #2C2420;
+}
+.footer-e .brand-name { color:#C8A97E; font-family:'Playfair Display',serif; font-size:22px; font-weight:800; margin-bottom:6px; }
+.footer-e .brand-desc { color:#555; font-size:13px; line-height:1.7; max-width:260px; }
+.footer-e .col-title { color:#FAF6EF; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; }
+.footer-e .col-links { display:flex; flex-direction:column; gap:10px; }
+.footer-e .col-links a { color:#666; font-size:13px; text-decoration:none; cursor:pointer; }
+.footer-e .col-links a:hover { color:#C8A97E; }
+.footer-e-bottom { padding:16px 60px; display:flex; justify-content:space-between; align-items:center; }
+.footer-e-bottom p { color:#333; font-size:11px; }
+</style>
+</head>
+<body>
+
+<!-- A -->
+<div>
+  <p class="label">A — Minimal Dark <span class="badge">Clean</span></p>
+  <footer class="footer-a">
+    <div>
+      <div class="logo">🍴 Foody</div>
+      <div class="tagline">Genuine food reviews across India</div>
+    </div>
+    <div class="links">
+      <a>Indore</a><a>Surat</a><a>Vadodara</a>
+      <a>AI Suggest</a><a>About</a>
+    </div>
+    <div class="copy">© 2026 Foody<br><span>Real reviews. Real taste.</span></div>
+  </footer>
+</div>
+
+<!-- B -->
+<div>
+  <p class="label">B — Rich 3-Column Dark <span class="badge">Full</span></p>
+  <footer class="footer-b">
+    <div class="footer-b-top">
+      <div>
+        <div class="brand-name">🍴 Foody</div>
+        <p class="brand-desc">Every restaurant visited in person. Every dish personally tasted and rated — zero sponsored content, ever.</p>
+      </div>
+      <div>
+        <p class="col-title">Cities</p>
+        <div class="col-links">
+          <a>🌆 Indore</a><a>🌊 Surat</a><a>🏛️ Vadodara</a><a>🏙️ Ahmedabad</a>
+        </div>
+      </div>
+      <div>
+        <p class="col-title">Explore</p>
+        <div class="col-links">
+          <a>AI Food Suggest</a><a>Top Rated</a><a>Must Try Dishes</a><a>About Us</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-b-bottom">
+      <p>© 2026 Foody — <span>Honest reviews only</span></p>
+      <p>Built with ❤️ for food lovers</p>
+    </div>
+  </footer>
+</div>
+
+<!-- C -->
+<div>
+  <p class="label">C — Warm Cream Card <span class="badge">Warm</span></p>
+  <footer class="footer-c">
+    <div class="footer-c-top">
+      <div>
+        <div class="brand-name">🍴 Foody</div>
+        <span class="brand-tag">Honest Reviews Only</span>
+        <p class="brand-desc">Every restaurant visited in person. Every dish personally tasted — zero sponsored content, ever.</p>
+      </div>
+      <div>
+        <p class="col-title">Cities</p>
+        <div class="col-links">
+          <a>Indore</a><a>Surat</a><a>Vadodara</a><a>Ahmedabad</a>
+        </div>
+      </div>
+      <div>
+        <p class="col-title">Explore</p>
+        <div class="col-links">
+          <a>AI Food Suggest</a><a>Top Rated</a><a>Must Try</a><a>About</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-c-bottom">
+      <p>© 2026 Foody. All rights reserved.</p>
+      <p>Genuine food reviews from real testers</p>
+    </div>
+  </footer>
+</div>
+
+<!-- D -->
+<div>
+  <p class="label">D — Bold Spice Red <span class="badge">Bold</span></p>
+  <footer class="footer-d">
+    <div class="footer-d-top">
+      <div>
+        <div class="brand-name">🍴 Foody</div>
+        <p class="brand-desc">Every restaurant visited in person. Zero sponsored content. Just honest, delicious truth.</p>
+        <div class="cities" style="margin-top:20px;">
+          <a class="city-pill">Indore</a>
+          <a class="city-pill">Surat</a>
+          <a class="city-pill">Vadodara</a>
+        </div>
+      </div>
+      <div>
+        <p class="col-title">Explore</p>
+        <div class="col-links">
+          <a>AI Food Suggest</a><a>Top Rated Places</a><a>Must Try Dishes</a>
+        </div>
+      </div>
+      <div>
+        <p class="col-title">About</p>
+        <div class="col-links">
+          <a>Our Testers</a><a>How We Review</a><a>Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-d-bottom">
+      <p>© 2026 Foody — Real reviews, real taste.</p>
+      <p>No sponsored content. Ever.</p>
+    </div>
+  </footer>
+</div>
+
+<!-- E -->
+<div>
+  <p class="label">E — Magazine with CTA Strip <span class="badge">Premium</span></p>
+  <footer class="footer-e">
+    <div class="footer-e-band">
+      <span class="cta-text">Not sure what to eat? Let AI decide. 🤖</span>
+      <a class="cta-btn">Try AI Suggest →</a>
+    </div>
+    <div class="footer-e-main">
+      <div>
+        <div class="brand-name">🍴 Foody</div>
+        <p class="brand-desc">Every restaurant visited in person. Every dish personally tasted and rated — zero sponsored content, ever.</p>
+      </div>
+      <div>
+        <p class="col-title">Cities</p>
+        <div class="col-links">
+          <a>Indore</a><a>Surat</a><a>Vadodara</a>
+        </div>
+      </div>
+      <div>
+        <p class="col-title">Explore</p>
+        <div class="col-links">
+          <a>AI Food Suggest</a><a>Top Rated</a><a>Must Try</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-e-bottom">
+      <p>© 2026 Foody — Genuine food reviews across India</p>
+      <p style="color:#444;">Real reviews. Real taste.</p>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>

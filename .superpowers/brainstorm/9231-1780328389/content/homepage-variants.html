@@ -1,0 +1,148 @@
+<h2>Homepage Design — 2 Variants</h2>
+<p class="subtitle">Both use a big search bar + featured content. Pick the one that feels right, or mix elements from both.</p>
+
+<div style="display:flex;gap:24px;margin-top:32px;align-items:flex-start;flex-wrap:wrap;">
+
+  <!-- VARIANT A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)" style="flex:1;min-width:320px;cursor:pointer;">
+    <div class="card-image" style="padding:0;background:#FAFAF8;border-bottom:1px solid #E8E2D9;">
+
+      <!-- Nav -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #E8E2D9;background:#fff;">
+        <span style="font-weight:700;font-size:15px;letter-spacing:0.5px;">🍴 Foody</span>
+        <span style="font-size:12px;color:#888;">Ahmedabad · Surat · Vadodara</span>
+      </div>
+
+      <!-- Hero search area -->
+      <div style="background:linear-gradient(135deg,#1A1614 0%,#2C2420 100%);padding:40px 20px 32px;text-align:center;">
+        <p style="color:#C8A97E;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Gujarat's finest food guide</p>
+        <h1 style="color:#fff;font-size:22px;font-weight:700;margin-bottom:6px;line-height:1.3;">Find your next<br>favourite dish</h1>
+        <p style="color:#aaa;font-size:12px;margin-bottom:20px;">Honest reviews from real food lovers</p>
+        <div style="display:flex;background:#fff;border-radius:50px;overflow:hidden;max-width:380px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+          <input style="flex:1;border:none;outline:none;padding:12px 18px;font-size:13px;color:#333;" placeholder="Search dishes, restaurants, cuisines…" readonly />
+          <button style="background:#C0432A;color:#fff;border:none;padding:12px 20px;font-size:12px;font-weight:600;cursor:pointer;border-radius:0 50px 50px 0;">Search</button>
+        </div>
+        <p style="color:#666;font-size:11px;margin-top:10px;">Popular: Dal Baati · Sev Tameta · Undhiyu</p>
+      </div>
+
+      <!-- Dish of the week -->
+      <div style="padding:20px;background:#fff;">
+        <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#C0432A;font-weight:600;margin-bottom:12px;">✦ Dish of the Week</p>
+        <div style="display:flex;gap:14px;align-items:center;">
+          <div style="width:80px;height:80px;border-radius:12px;background:linear-gradient(135deg,#D4956A,#A0522D);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;">🍛</div>
+          <div>
+            <p style="font-weight:700;font-size:14px;color:#1A1614;margin-bottom:2px;">Sev Tameta Nu Shaak</p>
+            <p style="font-size:11px;color:#888;margin-bottom:6px;">Gordhan Thal, Ahmedabad</p>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="background:#FFF3CD;color:#A0522D;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;">⭐ 4.8</span>
+              <span style="background:#F0FFF0;color:#2D6A2D;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;">Must Try</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- City cards row -->
+      <div style="padding:0 20px 20px;background:#FAFAF8;">
+        <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#666;font-weight:600;margin-bottom:10px;">Explore by City</p>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;background:linear-gradient(135deg,#2C2420,#4A3728);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:18px;margin-bottom:4px;">🏙️</div>
+            <p style="color:#fff;font-size:11px;font-weight:600;">Ahmedabad</p>
+            <p style="color:#aaa;font-size:9px;">24 restaurants</p>
+          </div>
+          <div style="flex:1;background:linear-gradient(135deg,#2C2420,#4A3728);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:18px;margin-bottom:4px;">🌊</div>
+            <p style="color:#fff;font-size:11px;font-weight:600;">Surat</p>
+            <p style="color:#aaa;font-size:9px;">18 restaurants</p>
+          </div>
+          <div style="flex:1;background:linear-gradient(135deg,#2C2420,#4A3728);border-radius:10px;padding:14px 10px;text-align:center;">
+            <div style="font-size:18px;margin-bottom:4px;">🏛️</div>
+            <p style="color:#fff;font-size:11px;font-weight:600;">Vadodara</p>
+            <p style="color:#aaa;font-size:9px;">12 restaurants</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="card-body">
+      <h3>Variant A — Dark & Editorial</h3>
+      <p>Dark hero with gold accents. Premium feel. "Dish of the Week" editorial card + city grid below.</p>
+    </div>
+  </div>
+
+  <!-- VARIANT B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)" style="flex:1;min-width:320px;cursor:pointer;">
+    <div class="card-image" style="padding:0;background:#FAFAF8;border-bottom:1px solid #E8E2D9;">
+
+      <!-- Nav -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #EEE;background:#fff;">
+        <span style="font-weight:700;font-size:15px;letter-spacing:0.5px;">🍴 Foody</span>
+        <span style="font-size:12px;color:#888;">Ahmedabad · Surat · Vadodara</span>
+      </div>
+
+      <!-- Light hero -->
+      <div style="background:#FAF6EF;padding:36px 20px 28px;text-align:center;border-bottom:1px solid #EEE;">
+        <p style="color:#C0432A;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;font-weight:600;">Gujarat's finest food guide</p>
+        <h1 style="color:#1A1614;font-size:22px;font-weight:700;margin-bottom:6px;line-height:1.3;">What are you<br>craving today?</h1>
+        <p style="color:#888;font-size:12px;margin-bottom:20px;">Curated dishes from Gujarat's best restaurants</p>
+        <div style="display:flex;background:#fff;border-radius:50px;overflow:hidden;max-width:380px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,0.1);border:1.5px solid #E8E2D9;">
+          <input style="flex:1;border:none;outline:none;padding:12px 18px;font-size:13px;color:#333;background:transparent;" placeholder="Search dishes, restaurants, cuisines…" readonly />
+          <button style="background:#1A1614;color:#fff;border:none;padding:12px 20px;font-size:12px;font-weight:600;cursor:pointer;border-radius:0 50px 50px 0;">Search</button>
+        </div>
+        <p style="color:#aaa;font-size:11px;margin-top:10px;">Popular: Dal Baati · Sev Tameta · Undhiyu</p>
+      </div>
+
+      <!-- Featured strip -->
+      <div style="background:#fff;padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1A1614;font-weight:700;">✦ This Week's Pick</p>
+          <span style="font-size:11px;color:#C0432A;font-weight:500;">See all →</span>
+        </div>
+        <div style="background:#FAF6EF;border-radius:16px;padding:16px;display:flex;gap:14px;align-items:center;border:1px solid #E8E2D9;">
+          <div style="width:72px;height:72px;border-radius:12px;background:linear-gradient(135deg,#E8C49A,#C0432A);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;">🍲</div>
+          <div style="flex:1;">
+            <p style="font-weight:700;font-size:14px;color:#1A1614;margin-bottom:2px;">Undhiyu</p>
+            <p style="font-size:11px;color:#888;margin-bottom:8px;">Vishalla, Ahmedabad</p>
+            <p style="font-size:11px;color:#555;line-height:1.4;">"Rich, earthy, everything winter food should be."</p>
+          </div>
+          <div style="text-align:center;">
+            <div style="background:#1A1614;color:#fff;border-radius:8px;padding:6px 10px;">
+              <p style="font-size:16px;font-weight:700;">4.9</p>
+              <p style="font-size:9px;color:#aaa;">★★★★★</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- City grid - horizontal scroll -->
+      <div style="padding:0 20px 20px;background:#FAFAF8;">
+        <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#666;font-weight:600;margin-bottom:10px;">Browse by City</p>
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;border:1.5px solid #E8E2D9;border-radius:12px;padding:16px 10px;text-align:center;background:#fff;">
+            <div style="font-size:20px;margin-bottom:4px;">🏙️</div>
+            <p style="color:#1A1614;font-size:12px;font-weight:700;">Ahmedabad</p>
+            <p style="color:#999;font-size:10px;">24 spots</p>
+          </div>
+          <div style="flex:1;border:1.5px solid #E8E2D9;border-radius:12px;padding:16px 10px;text-align:center;background:#fff;">
+            <div style="font-size:20px;margin-bottom:4px;">🌊</div>
+            <p style="color:#1A1614;font-size:12px;font-weight:700;">Surat</p>
+            <p style="color:#999;font-size:10px;">18 spots</p>
+          </div>
+          <div style="flex:1;border:1.5px solid #E8E2D9;border-radius:12px;padding:16px 10px;text-align:center;background:#fff;">
+            <div style="font-size:20px;margin-bottom:4px;">🏛️</div>
+            <p style="color:#1A1614;font-size:12px;font-weight:700;">Vadodara</p>
+            <p style="color:#999;font-size:10px;">12 spots</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="card-body">
+      <h3>Variant B — Light & Warm</h3>
+      <p>Cream/white background. Dark charcoal accents. Warmer, more approachable feel. Featured dish with a taste note quote.</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center;color:#888;font-size:12px;margin-top:24px;">Click a variant to select it — or tell me what you'd like to mix from each.</p>

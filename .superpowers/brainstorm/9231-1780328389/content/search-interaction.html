@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search Interaction Demo</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#1A1614; font-family:system-ui,sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+
+  .hero {
+    position:relative;
+    flex:1;
+    min-height:420px;
+    background:linear-gradient(160deg,#1A1614 0%,#2C1F1A 60%,#1A1614 100%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:40px 24px;
+    overflow:hidden;
+  }
+
+  /* Floating dish bubbles */
+  .bubble {
+    position:absolute;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(200,169,126,0.2);
+    backdrop-filter:blur(4px);
+    border-radius:40px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    white-space:nowrap;
+    pointer-events:none;
+    transform-origin:center;
+    animation:bubbleLife var(--dur) ease-in-out forwards;
+    z-index:1;
+  }
+  .bubble .emoji { font-size:var(--ems); }
+  .bubble .name  { color:#FAF6EF; font-weight:600; font-size:var(--fns); }
+  .bubble .rating { color:#C8A97E; font-size:calc(var(--fns) * 0.85); }
+
+  @keyframes bubbleLife {
+    0%   { opacity:0; transform:translate(0,30px) scale(0.6); }
+    15%  { opacity:1; transform:translate(var(--mx1),var(--my1)) scale(1); }
+    70%  { opacity:0.85; transform:translate(var(--mx2),var(--my2)) scale(1.04); }
+    100% { opacity:0; transform:translate(var(--mx3),var(--my3)) scale(0.9); }
+  }
+
+  /* Hero content */
+  .hero-content {
+    position:relative;
+    z-index:10;
+    text-align:center;
+    width:100%;
+    max-width:480px;
+  }
+
+  .eyebrow { color:#C8A97E; font-size:10px; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; }
+  h1 { color:#FAF6EF; font-size:26px; font-weight:800; line-height:1.25; margin-bottom:8px; text-shadow:0 2px 20px rgba(0,0,0,.6); }
+  .sub { color:#888; font-size:13px; margin-bottom:28px; }
+
+  /* Search bar */
+  .search-wrap { position:relative; }
+  .search-box {
+    background:#fff;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 8px 32px rgba(0,0,0,.5);
+    border:2.5px solid #C0432A;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .search-box:focus-within {
+    border-color:#C8A97E;
+    box-shadow:0 8px 40px rgba(192,67,42,.35);
+  }
+  .search-row {
+    display:flex;
+    align-items:center;
+    padding:4px 4px 4px 16px;
+    gap:10px;
+  }
+  .search-icon { font-size:17px; flex-shrink:0; }
+  .search-row input {
+    flex:1;
+    border:none;
+    outline:none;
+    padding:12px 0;
+    font-size:15px;
+    color:#1A1614;
+    background:transparent;
+    min-width:0;
+    font-weight:500;
+  }
+  .search-row input::placeholder { color:#bbb; font-weight:400; }
+  .search-row button {
+    background:#C0432A;
+    color:#fff;
+    border:none;
+    padding:12px 20px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    border-radius:10px;
+    flex-shrink:0;
+    transition:background .2s;
+  }
+  .search-row button:hover { background:#9E3520; }
+
+  .search-hint {
+    background:#FAF6EF;
+    padding:8px 16px;
+    border-top:1px solid #E8E2D9;
+    font-size:11px;
+    color:#888;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .hint-tag {
+    color:#C0432A;
+    font-weight:600;
+    cursor:pointer;
+    padding:2px 8px;
+    border-radius:20px;
+    background:#FEF0EE;
+    transition:background .15s;
+  }
+  .hint-tag:hover { background:#FDDDD8; }
+
+  /* City detected pill */
+  .city-pill {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(192,67,42,.15);
+    border:1px solid rgba(192,67,42,.4);
+    color:#C8A97E;
+    font-size:11px;
+    font-weight:600;
+    padding:4px 12px;
+    border-radius:20px;
+    margin-top:10px;
+    opacity:0;
+    transform:translateY(6px);
+    transition:opacity .3s, transform .3s;
+  }
+  .city-pill.show { opacity:1; transform:translateY(0); }
+
+  /* Note bar */
+  .note {
+    background:#0F0B09;
+    padding:14px 20px;
+    color:#666;
+    font-size:12px;
+    text-align:center;
+    border-top:1px solid #2A1A10;
+    line-height:1.6;
+  }
+  .note strong { color:#C8A97E; }
+</style>
+</head>
+<body>
+
+<div class="hero" id="hero">
+  <div class="hero-content">
+    <p class="eyebrow">Gujarat's finest food guide</p>
+    <h1>Find your next<br>favourite dish</h1>
+    <p class="sub">Type a city or dish below</p>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <div class="search-row">
+          <span class="search-icon">🔍</span>
+          <input
+            id="searchInput"
+            placeholder="Try typing  'surat'  or  'ahmedabad'…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button>Search</button>
+        </div>
+        <div class="search-hint">
+          <span>Try:</span>
+          <span class="hint-tag" onclick="typeCity('surat')">Surat</span>
+          <span class="hint-tag" onclick="typeCity('ahmedabad')">Ahmedabad</span>
+          <span class="hint-tag" onclick="typeCity('vadodara')">Vadodara</span>
+          <span class="hint-tag" onclick="clearSearch()">Clear</span>
+        </div>
+      </div>
+      <div class="city-pill" id="cityPill">
+        <span id="cityPillIcon">📍</span>
+        <span id="cityPillText">Showing dishes from Surat</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Try it:</strong> Type a city name in the search bar above — dishes from that city float up in the background and drift away. This is the proposed search interaction for the landing page hero.
+</div>
+
+<script>
+const cityData = {
+  surat: {
+    name:'Surat',
+    dishes:[
+      { name:'Locho',          emoji:'🫕', rating:'4.9' },
+      { name:'Ponk Vada',      emoji:'🌿', rating:'4.7' },
+      { name:'Surti Undhiyu',  emoji:'🥘', rating:'4.8' },
+      { name:'Ghari',          emoji:'🧁', rating:'4.6' },
+      { name:'Rasawala Khaman',emoji:'🟡', rating:'4.8' },
+      { name:'Sev Khamani',    emoji:'🍜', rating:'4.5' },
+      { name:'Dabeli',         emoji:'🥙', rating:'4.7' },
+      { name:'Surti Bhajiya',  emoji:'🥜', rating:'4.6' },
+      { name:'Jalebi',         emoji:'🍩', rating:'4.9' },
+    ]
+  },
+  ahmedabad: {
+    name:'Ahmedabad',
+    dishes:[
+      { name:'Sev Tameta',     emoji:'🍛', rating:'4.9' },
+      { name:'Fafda Jalebi',   emoji:'🍩', rating:'4.8' },
+      { name:'Dhokla',         emoji:'🟨', rating:'4.7' },
+      { name:'Khandvi',        emoji:'🟢', rating:'4.6' },
+      { name:'Undhiyu',        emoji:'🥘', rating:'4.8' },
+      { name:'Thepla',         emoji:'🫓', rating:'4.5' },
+      { name:'Mohanthal',      emoji:'🍬', rating:'4.7' },
+      { name:'Khichu',         emoji:'⚪', rating:'4.6' },
+      { name:'Pav Bhaji',      emoji:'🍞', rating:'4.5' },
+    ]
+  },
+  vadodara: {
+    name:'Vadodara',
+    dishes:[
+      { name:'Sev Usal',       emoji:'🍲', rating:'4.8' },
+      { name:'Gathiya',        emoji:'🌀', rating:'4.7' },
+      { name:'Chakri',         emoji:'🌀', rating:'4.6' },
+      { name:'Muthia',         emoji:'🫙', rating:'4.5' },
+      { name:'Basundi',        emoji:'🥛', rating:'4.8' },
+      { name:'Shrikhand',      emoji:'🍮', rating:'4.7' },
+      { name:'Patra',          emoji:'🍃', rating:'4.6' },
+      { name:'Handvo',         emoji:'🟫', rating:'4.5' },
+      { name:'Kadhi Khichdi',  emoji:'🍚', rating:'4.7' },
+    ]
+  }
+};
+
+const hero    = document.getElementById('hero');
+const input   = document.getElementById('searchInput');
+const pill    = document.getElementById('cityPill');
+const pillTxt = document.getElementById('cityPillText');
+
+let currentCity  = null;
+let spawnTimer   = null;
+let burstTimeout = null;
+
+function detectCity(val) {
+  const v = val.toLowerCase().trim();
+  for (const key of Object.keys(cityData)) {
+    if (v.includes(key.slice(0,4))) return key;  // match first 4 chars
+  }
+  return null;
+}
+
+function spawnBubble(dish) {
+  const el = document.createElement('div');
+  el.className = 'bubble';
+
+  // Random size tier
+  const tier   = Math.random();
+  const emSize = tier > 0.7 ? '22px' : tier > 0.4 ? '16px' : '12px';
+  const fnSize = tier > 0.7 ? '13px' : tier > 0.4 ? '11px' : '9px';
+  const padH   = tier > 0.7 ? '10px 16px' : tier > 0.4 ? '7px 12px' : '5px 10px';
+
+  el.style.cssText = `
+    --ems:${emSize}; --fns:${fnSize};
+    padding:${padH};
+    left:${5 + Math.random() * 85}%;
+    top:${10 + Math.random() * 75}%;
+    --dur:${3.5 + Math.random() * 2.5}s;
+    --mx1:${(Math.random()-0.5)*60}px;
+    --my1:${-10 - Math.random()*30}px;
+    --mx2:${(Math.random()-0.5)*100}px;
+    --my2:${-30 - Math.random()*50}px;
+    --mx3:${(Math.random()-0.5)*140}px;
+    --my3:${-60 - Math.random()*60}px;
+  `;
+
+  el.innerHTML = `
+    <span class="emoji">${dish.emoji}</span>
+    <span class="name">${dish.name}</span>
+    <span class="rating">★ ${dish.rating}</span>
+  `;
+
+  hero.appendChild(el);
+  setTimeout(() => el.remove(), 7000);
+}
+
+function startBurst(cityKey) {
+  const city   = cityData[cityKey];
+  const dishes = [...city.dishes];
+
+  // Show pill
+  pillTxt.textContent = `Showing dishes from ${city.name}`;
+  pill.classList.add('show');
+
+  // Burst: spawn 4–5 immediately, then trickle
+  let idx = 0;
+  function burst() {
+    if (idx < dishes.length) {
+      spawnBubble(dishes[idx % dishes.length]);
+      idx++;
+    }
+  }
+
+  // Immediate burst
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => spawnBubble(dishes[i % dishes.length]), i * 120);
+  }
+
+  // Then trickle continuously
+  spawnTimer = setInterval(() => {
+    spawnBubble(dishes[Math.floor(Math.random() * dishes.length)]);
+  }, 900);
+}
+
+function stopBurst() {
+  clearInterval(spawnTimer);
+  clearTimeout(burstTimeout);
+  pill.classList.remove('show');
+  currentCity = null;
+  // Remove existing bubbles gently (they'll fade on their own)
+}
+
+input.addEventListener('input', () => {
+  const city = detectCity(input.value);
+  if (city && city !== currentCity) {
+    stopBurst();
+    currentCity = city;
+    startBurst(city);
+  } else if (!city && currentCity) {
+    stopBurst();
+  }
+});
+
+function typeCity(name) {
+  input.value = name;
+  input.dispatchEvent(new Event('input'));
+  input.focus();
+}
+
+function clearSearch() {
+  input.value = '';
+  stopBurst();
+}
+</script>
+</body>
+</html>

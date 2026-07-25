@@ -1,18 +1,29 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Playfair_Display, DM_Sans } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+})
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dm-sans',
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'Foody — Best Food in Surat & Vadodara',
-  description: 'Genuine food reviews by local testers. Find the best dishes and restaurants in Surat and Vadodara, Gujarat.',
+  title: 'Foody — The Honest Food Guide',
+  description: 'Genuine food reviews by local testers. Find the best dishes and restaurants across India.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-orange-50 text-gray-900 antialiased`}>
+      <body className={`${playfair.variable} ${dmSans.variable} font-body bg-cream text-charcoal antialiased`}>
         {children}
       </body>
     </html>

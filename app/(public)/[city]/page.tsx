@@ -53,14 +53,28 @@ export default async function CityPage({
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-2">Best Food in {city.name}</h1>
-      <p className="text-gray-500 mb-6">{enriched.length} restaurants reviewed by our team</p>
+      {/* Header */}
+      <div className="border-b border-warm-100 pb-8 mb-10">
+        <p className="font-body text-xs text-muted uppercase tracking-[0.2em] mb-2">
+          <a href="/" className="hover:text-spice transition-colors">Home</a>
+          <span className="mx-2">/</span>
+          Restaurants
+        </p>
+        <h1 className="font-display text-5xl font-bold text-charcoal">
+          Best Food in {city.name}
+        </h1>
+        <p className="font-body text-muted mt-2 text-sm">{enriched.length} restaurants reviewed by our team</p>
+      </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="flex flex-wrap gap-2 mb-10">
         <a
           href={`/${citySlug}`}
-          className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${!cuisine && !price ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'}`}
+          className={`font-body text-xs px-4 py-2 border uppercase tracking-widest transition-colors ${
+            !cuisine && !price
+              ? 'bg-spice text-white border-spice'
+              : 'bg-white text-charcoal border-warm-200 hover:border-spice hover:text-spice'
+          }`}
         >
           All
         </a>
@@ -68,17 +82,25 @@ export default async function CityPage({
           <a
             key={c}
             href={`/${citySlug}?cuisine=${c}${price ? `&price=${price}` : ''}`}
-            className={`text-sm px-4 py-1.5 rounded-full border transition-colors capitalize ${cuisine === c ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'}`}
+            className={`font-body text-xs px-4 py-2 border capitalize tracking-wide transition-colors ${
+              cuisine === c
+                ? 'bg-spice text-white border-spice'
+                : 'bg-white text-charcoal border-warm-200 hover:border-spice hover:text-spice'
+            }`}
           >
             {c}
           </a>
         ))}
-        <span className="w-px bg-gray-200 mx-1" />
+        <span className="w-px bg-warm-200 mx-1" />
         {[['1', '₹ Budget'], ['2', '₹₹ Mid'], ['3', '₹₹₹ Premium']].map(([val, label]) => (
           <a
             key={val}
             href={`/${citySlug}?price=${val}${cuisine ? `&cuisine=${cuisine}` : ''}`}
-            className={`text-sm px-4 py-1.5 rounded-full border transition-colors ${price === val ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'}`}
+            className={`font-body text-xs px-4 py-2 border tracking-wide transition-colors ${
+              price === val
+                ? 'bg-spice text-white border-spice'
+                : 'bg-white text-charcoal border-warm-200 hover:border-spice hover:text-spice'
+            }`}
           >
             {label}
           </a>
@@ -86,9 +108,9 @@ export default async function CityPage({
       </div>
 
       {enriched.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-          <p className="text-5xl mb-4">🍽️</p>
-          <p className="text-lg">No restaurants yet for this filter. Check back soon!</p>
+        <div className="text-center py-24">
+          <p className="font-display text-8xl font-bold text-warm-200 mb-6">?</p>
+          <p className="font-body text-muted">No restaurants yet for this filter. Check back soon!</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

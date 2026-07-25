@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero Background Options</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #F5F0E8; font-family: 'DM Sans', system-ui, sans-serif; padding: 24px; }
+  h2 { font-size: 20px; color: #1A1614; margin-bottom: 6px; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 28px; }
+  .grid { display: flex; flex-direction: column; gap: 32px; }
+  .option { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.12); cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s; }
+  .option:hover { border-color: #C0432A; }
+  .option.selected { border-color: #C0432A; }
+  .label { background: #fff; padding: 14px 20px; }
+  .label h3 { font-size: 14px; font-weight: 700; color: #1A1614; margin-bottom: 3px; }
+  .label p { font-size: 12px; color: #888; }
+  .badge { display: inline-block; background: #C0432A; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
+
+  /* Shared hero content */
+  .hero-content { position: relative; z-index: 2; padding: 36px 24px 32px; text-align: center; }
+  .hero-content .eyebrow { color: #C8A97E; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+  .hero-content h1 { color: #FAF6EF; font-size: 22px; font-weight: 800; line-height: 1.25; margin-bottom: 22px; }
+  .search-box { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,0.35); border: 2px solid #C0432A; max-width: 400px; margin: 0 auto; }
+  .search-inner { display: flex; align-items: center; padding: 4px 4px 4px 14px; gap: 8px; }
+  .search-inner input { flex: 1; border: none; outline: none; padding: 10px 0; font-size: 13px; color: #1A1614; background: transparent; width: 100%; }
+  .search-inner button { background: #C0432A; color: #fff; border: none; padding: 11px 18px; font-size: 12px; font-weight: 700; cursor: pointer; border-radius: 8px; white-space: nowrap; }
+  .search-tags { background: #FAF6EF; padding: 7px 14px; border-top: 1px solid #E8E2D9; font-size: 10px; color: #888; }
+  .search-tags span { color: #C0432A; font-weight: 500; margin: 0 3px; }
+
+  /* ── Option A: Floating Food Particles ── */
+  .bg-a {
+    position: relative;
+    background: #1A1614;
+    overflow: hidden;
+    min-height: 220px;
+  }
+  .particle {
+    position: absolute;
+    font-size: 22px;
+    opacity: 0;
+    animation: floatUp 6s ease-in infinite;
+    user-select: none;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(100%) rotate(0deg);   opacity: 0; }
+    10%  { opacity: 0.35; }
+    90%  { opacity: 0.15; }
+    100% { transform: translateY(-120px) rotate(20deg); opacity: 0; }
+  }
+  .p1  { left: 5%;  animation-delay: 0s;    animation-duration: 7s; }
+  .p2  { left: 15%; animation-delay: 1.2s;  animation-duration: 5.5s; }
+  .p3  { left: 28%; animation-delay: 0.5s;  animation-duration: 8s; }
+  .p4  { left: 42%; animation-delay: 2.1s;  animation-duration: 6s; }
+  .p5  { left: 55%; animation-delay: 0.8s;  animation-duration: 7.5s; }
+  .p6  { left: 68%; animation-delay: 1.7s;  animation-duration: 5s; }
+  .p7  { left: 78%; animation-delay: 0.3s;  animation-duration: 9s; }
+  .p8  { left: 88%; animation-delay: 2.5s;  animation-duration: 6.5s; }
+  .p9  { left: 22%; animation-delay: 3.0s;  animation-duration: 7s; }
+  .p10 { left: 60%; animation-delay: 3.5s;  animation-duration: 5.5s; }
+
+  /* ── Option B: Shifting Gradient Mesh ── */
+  .bg-b {
+    position: relative;
+    background: linear-gradient(135deg, #1A1614, #3A2010, #C0432A, #1A1614);
+    background-size: 400% 400%;
+    animation: gradientShift 8s ease infinite;
+    min-height: 220px;
+  }
+  @keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .bg-b::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(192,67,42,0.25) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 30%, rgba(200,169,126,0.15) 0%, transparent 50%);
+    animation: pulseGlow 4s ease-in-out infinite alternate;
+  }
+  @keyframes pulseGlow {
+    from { opacity: 0.6; }
+    to   { opacity: 1; }
+  }
+
+  /* ── Option C: Spice Smoke / Grain ── */
+  .bg-c {
+    position: relative;
+    background: radial-gradient(ellipse at 50% 80%, #3A2010 0%, #1A1614 70%);
+    min-height: 220px;
+    overflow: hidden;
+  }
+  .smoke {
+    position: absolute;
+    bottom: 0;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0;
+    animation: smokeRise 5s ease-in-out infinite;
+  }
+  .s1 { background: rgba(192,67,42,0.4);  left: 10%; animation-delay: 0s; }
+  .s2 { background: rgba(200,169,126,0.2); left: 40%; animation-delay: 1.5s; }
+  .s3 { background: rgba(192,67,42,0.3);  left: 70%; animation-delay: 3s; }
+  @keyframes smokeRise {
+    0%   { transform: translateY(0)   scale(0.8); opacity: 0; }
+    30%  { opacity: 0.7; }
+    100% { transform: translateY(-180px) scale(1.6); opacity: 0; }
+  }
+  /* Subtle grain overlay */
+  .bg-c::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .select-bar { background: #1A1614; padding: 10px 20px; display: flex; justify-content: center; gap: 12px; }
+  .select-btn { background: #C0432A; color: #fff; border: none; padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+  <h2>Hero Background — Animated Options</h2>
+  <p class="subtitle">Three animated styles for the dark brown search hero. Click the one you like.</p>
+
+  <div class="grid">
+
+    <!-- OPTION A -->
+    <div class="option" id="opt-a" onclick="selectOption('a')">
+      <div class="bg-a">
+        <div class="particle p1">🍛</div>
+        <div class="particle p2">🌶️</div>
+        <div class="particle p3">🧅</div>
+        <div class="particle p4">🍅</div>
+        <div class="particle p5">✨</div>
+        <div class="particle p6">🫙</div>
+        <div class="particle p7">🍋</div>
+        <div class="particle p8">🌿</div>
+        <div class="particle p9">🥘</div>
+        <div class="particle p10">⭐</div>
+        <div class="hero-content">
+          <p class="eyebrow">Gujarat's finest food guide</p>
+          <h1>Find your next<br>favourite dish</h1>
+          <div class="search-box">
+            <div class="search-inner">
+              <span style="font-size:15px;">🔍</span>
+              <input placeholder="Search dishes, restaurants…" readonly />
+              <button>Search</button>
+            </div>
+            <div class="search-tags">Popular: <span>Dal Baati</span> · <span>Sev Tameta</span> · <span>Undhiyu</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">
+        <h3>A — Floating Food Particles <span class="badge">Playful</span></h3>
+        <p>Food emojis float upward in the background. Fun, lively, makes you think of actual food.</p>
+      </div>
+    </div>
+
+    <!-- OPTION B -->
+    <div class="option" id="opt-b" onclick="selectOption('b')">
+      <div class="bg-b">
+        <div class="hero-content">
+          <p class="eyebrow">Gujarat's finest food guide</p>
+          <h1>Find your next<br>favourite dish</h1>
+          <div class="search-box">
+            <div class="search-inner">
+              <span style="font-size:15px;">🔍</span>
+              <input placeholder="Search dishes, restaurants…" readonly />
+              <button>Search</button>
+            </div>
+            <div class="search-tags">Popular: <span>Dal Baati</span> · <span>Sev Tameta</span> · <span>Undhiyu</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">
+        <h3>B — Shifting Gradient Mesh <span class="badge">Premium</span></h3>
+        <p>Slow, breathing gradient between charcoal, deep brown, and spice red. Feels alive without being distracting.</p>
+      </div>
+    </div>
+
+    <!-- OPTION C -->
+    <div class="option" id="opt-c" onclick="selectOption('c')">
+      <div class="bg-c">
+        <div class="smoke s1"></div>
+        <div class="smoke s2"></div>
+        <div class="smoke s3"></div>
+        <div class="hero-content" style="position:relative;z-index:2;">
+          <p class="eyebrow">Gujarat's finest food guide</p>
+          <h1>Find your next<br>favourite dish</h1>
+          <div class="search-box">
+            <div class="search-inner">
+              <span style="font-size:15px;">🔍</span>
+              <input placeholder="Search dishes, restaurants…" readonly />
+              <button>Search</button>
+            </div>
+            <div class="search-tags">Popular: <span>Dal Baati</span> · <span>Sev Tameta</span> · <span>Undhiyu</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="label">
+        <h3>C — Rising Spice Smoke <span class="badge">Atmospheric</span></h3>
+        <p>Soft glowing orbs rise like steam/smoke from spices. Warm and mysterious — like a kitchen at work.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function selectOption(id) {
+      document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+      document.getElementById('opt-' + id).classList.add('selected');
+      if (window.__claude_helper) window.__claude_helper.select(id, 'Option ' + id.toUpperCase());
+    }
+  </script>
+</body>
+</html>

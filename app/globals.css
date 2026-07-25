@@ -2,8 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    background-color: #FAF6EF;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@keyframes wordFloat {
+  0%   { opacity: 0;             transform: translate(0, 0); }
+  10%  { opacity: var(--peak);   transform: translate(var(--x1), var(--y1)); }
+  85%  { opacity: var(--peak);   transform: translate(var(--x2), var(--y2)); }
+  100% { opacity: 0;             transform: translate(var(--x3), var(--y3)); }
+}
+
+@keyframes locPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.12); }
 }

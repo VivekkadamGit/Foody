@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import StarRating from '@/components/ui/StarRating'
 import { PRICE_LABELS } from '@/types/database'
 
 export default async function RestaurantPage({
@@ -33,6 +32,11 @@ export default async function RestaurantPage({
     return { ...d, avg_rating: avg }
   }).sort((a: any, b: any) => b.avg_rating - a.avg_rating)
 
+  const ratedDishes = dishesWithAvg.filter((d: any) => d.avg_rating > 0)
+  const overallRating = ratedDishes.length > 0
+    ? ratedDishes.reduce((s: number, d: any) => s + d.avg_rating, 0) / ratedDishes.length
+    : null
+
   const mapEmbedUrl = restaurant.latitude && restaurant.longitude
     ? `https://maps.google.com/maps?q=${restaurant.latitude},${restaurant.longitude}&z=16&output=embed`
     : restaurant.google_place_id
@@ -42,109 +46,131 @@ export default async function RestaurantPage({
   return (
     <div>
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500 mb-4">
-        <a href="/" className="hover:text-orange-600">Home</a>
-        {' / '}
-        <a href={`/${citySlug}`} className="hover:text-orange-600 capitalize">{restaurant.cities.name}</a>
-        {' / '}
-        <span className="text-gray-900">{restaurant.name}</span>
+      <nav className="font-body text-xs text-muted mb-6 uppercase tracking-[0.15em]">
+        <a href="/" className="hover:text-spice transition-colors">Home</a>
+        <span className="mx-2">/</span>
+        <a href={`/${citySlug}`} className="hover:text-spice transition-colors capitalize">{restaurant.cities.name}</a>
+        <span className="mx-2">/</span>
+        <span className="text-charcoal">{restaurant.name}</span>
       </nav>
 
-      {/* Cover image */}
+      {/* Cover */}
       {restaurant.cover_image_url && (
-        <div className="h-64 rounded-2xl overflow-hidden mb-6">
-          <img src={restaurant.cover_image_url} alt={restaurant.name} className="w-full h-full object-cover" />
+        <div className="h-72 lg:h-96 overflow-hidden mb-10">
+          <img
+            src={restaurant.cover_image_url}
+            alt={restaurant.name}
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
 
       {/* Restaurant header */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-orange-100 mb-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">{restaurant.name}</h1>
-            <p className="text-gray-500 mt-1">{restaurant.address}</p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {restaurant.cuisine_type?.map((c: string) => (
-                <span key={c} className="text-sm bg-orange-50 text-orange-700 px-3 py-1 rounded-full capitalize">{c}</span>
-              ))}
-              <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                {PRICE_LABELS[restaurant.price_range as 1 | 2 | 3]}
+      <div className="flex flex-wrap items-start justify-between gap-6 border-b border-warm-100 pb-10 mb-10">
+        <div>
+          <h1 className="font-display text-4xl lg:text-5xl font-bold text-charcoal leading-tight">
+            {restaurant.name}
+          </h1>
+          <p className="font-body text-muted mt-2 text-sm">{restaurant.address}</p>
+          <div className="flex flex-wrap gap-2 mt-5">
+            {restaurant.cuisine_type?.map((c: string) => (
+              <span key={c} className="font-body text-xs text-spice border border-spice/20 px-3 py-1 capitalize tracking-wide">
+                {c}
               </span>
-            </div>
-          </div>
-          <div className="bg-orange-50 rounded-xl px-5 py-3 text-center">
-            <p className="text-3xl font-bold text-orange-600">
-              {dishesWithAvg.length > 0
-                ? (dishesWithAvg.reduce((s: number, d: any) => s + d.avg_rating, 0) / dishesWithAvg.filter((d: any) => d.avg_rating > 0).length || 0).toFixed(1)
-                : '—'}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Overall Rating</p>
+            ))}
+            <span className="font-body text-xs text-muted border border-warm-200 px-3 py-1 tracking-wide">
+              {PRICE_LABELS[restaurant.price_range as 1 | 2 | 3]}
+            </span>
           </div>
         </div>
+        {overallRating && (
+          <div className="bg-spice text-white px-8 py-5 text-center flex-shrink-0">
+            <p className="font-display text-4xl font-bold leading-none">{overallRating.toFixed(1)}</p>
+            <p className="font-body text-xs text-red-200 mt-2 uppercase tracking-widest">Overall</p>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Dishes */}
         <div className="lg:col-span-2">
-          <h2 className="text-2xl font-bold mb-4">Dishes Reviewed</h2>
+          <h2 className="font-display text-2xl font-bold text-charcoal mb-6">Dishes Reviewed</h2>
+
           {dishesWithAvg.length === 0 ? (
-            <p className="text-gray-400">No dishes reviewed yet.</p>
+            <p className="font-body text-muted">No dishes reviewed yet.</p>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               {dishesWithAvg.map((dish: any) => (
-                <div key={dish.id} className="bg-white rounded-2xl border border-orange-100 shadow-sm overflow-hidden">
-                  <div className="flex gap-4">
+                <div key={dish.id} className="bg-white border border-warm-100">
+                  <div className="flex">
                     {dish.photo_url && (
-                      <div className="w-32 h-32 flex-shrink-0">
-                        <img src={dish.photo_url} alt={dish.name} className="w-full h-full object-cover" />
+                      <div className="w-36 h-36 flex-shrink-0 overflow-hidden">
+                        <img
+                          src={dish.photo_url}
+                          alt={dish.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     )}
-                    <div className="p-4 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-lg">{dish.name}</h3>
+                    <div className="p-5 flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="font-display font-bold text-lg text-charcoal">{dish.name}</h3>
                         {dish.is_must_try && (
-                          <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">Must Try</span>
+                          <span className="font-body text-xs bg-spice text-white px-2 py-0.5 uppercase tracking-widest flex-shrink-0">
+                            Must Try
+                          </span>
                         )}
                       </div>
-                      {dish.description && <p className="text-sm text-gray-500 mt-1">{dish.description}</p>}
-                      {dish.avg_rating > 0 && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <StarRating rating={dish.avg_rating} size="md" />
-                          <span className="text-gray-600 font-semibold">{dish.avg_rating.toFixed(1)}</span>
-                        </div>
+                      {dish.description && (
+                        <p className="font-body text-sm text-muted mt-1 leading-relaxed">{dish.description}</p>
                       )}
-                      {/* Tester reviews */}
-                      {dish.reviews?.length > 0 && (
-                        <div className="mt-3 space-y-2">
-                          {dish.reviews.map((review: any) => (
-                            <div key={review.id} className="bg-orange-50 rounded-xl p-3">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-semibold text-orange-700">✓ {review.testers?.name ?? 'Tester'}</span>
-                                <StarRating rating={review.rating} />
-                                <span className="text-xs text-gray-400">{review.visit_date}</span>
-                              </div>
-                              {review.taste_notes && <p className="text-sm text-gray-600">{review.taste_notes}</p>}
-                            </div>
-                          ))}
+                      {dish.avg_rating > 0 && (
+                        <div className="flex items-baseline gap-1.5 mt-3">
+                          <span className="font-body text-lg font-bold text-spice">★ {dish.avg_rating.toFixed(1)}</span>
+                          <span className="font-body text-xs text-muted">/ 5</span>
                         </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Reviews */}
+                  {dish.reviews?.length > 0 && (
+                    <div className="border-t border-warm-100 divide-y divide-warm-100">
+                      {dish.reviews.map((review: any) => (
+                        <div key={review.id} className="p-5">
+                          <div className="flex flex-wrap items-center gap-3 mb-2">
+                            <span className="font-body text-xs font-bold text-charcoal uppercase tracking-wide">
+                              {review.testers?.name ?? 'Tester'}
+                            </span>
+                            <span className="font-body text-xs text-amber-500 font-semibold tracking-tight">
+                              {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                            </span>
+                            <span className="font-body text-xs text-muted">{review.visit_date}</span>
+                          </div>
+                          {review.taste_notes && (
+                            <p className="font-body text-sm text-charcoal/80 italic leading-relaxed">
+                              &ldquo;{review.taste_notes}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Map sidebar */}
+        {/* Sidebar */}
         <div>
-          <h2 className="text-2xl font-bold mb-4">Location</h2>
+          <h2 className="font-display text-2xl font-bold text-charcoal mb-6">Location</h2>
           {mapEmbedUrl ? (
-            <div className="rounded-2xl overflow-hidden border border-orange-100 shadow-sm">
+            <div className="overflow-hidden border border-warm-100">
               <iframe
                 src={mapEmbedUrl}
                 width="100%"
-                height="300"
+                height="280"
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
@@ -152,15 +178,15 @@ export default async function RestaurantPage({
               />
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-orange-100 p-6 text-gray-400 text-center">
-              <p>📍 {restaurant.address}</p>
+            <div className="bg-white border border-warm-100 p-6 text-center">
+              <p className="font-body text-sm text-muted">📍 {restaurant.address}</p>
             </div>
           )}
           <a
             href={`https://maps.google.com/?q=${encodeURIComponent(restaurant.name + ' ' + restaurant.address)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 block text-center text-sm text-orange-600 hover:text-orange-700 font-medium"
+            className="mt-4 block font-body text-sm text-spice hover:text-spice-light font-medium transition-colors"
           >
             Open in Google Maps →
           </a>
