@@ -55,7 +55,7 @@ The direct DB host (`db.uftgjzfmlyvkniegawms.supabase.co`) is IPv6-only and won'
 
 ### Directus CMS (`/cms`)
 
-Directus auto-discovers the existing Postgres schema. After running a DB migration, go to **Settings → Data Model → Reload** in the Directus UI to pick up schema changes. Directus creates its own `directus_*` system tables alongside the Foody tables — do not modify these.
+Directus auto-discovers the existing Postgres schema. After running a DB migration, go to **Settings → Data Model → Reload** in the Directus UI to pick up schema changes. Directus creates its own `directus_*` system tables alongside the Chakh tables — do not modify these.
 
 ## Deployment
 

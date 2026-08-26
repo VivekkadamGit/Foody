@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
         <div className="text-center mb-6">
           <span className="text-4xl">🍽️</span>
-          <h1 className="text-2xl font-bold mt-2">Foody Admin</h1>
+          <h1 className="text-2xl font-bold mt-2">Chakh Admin</h1>
           <p className="text-gray-500 text-sm mt-1">Sign in with your tester account</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">

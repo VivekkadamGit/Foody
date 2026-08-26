@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 type City = { name: string; slug: string }
@@ -8,23 +7,32 @@ export default function Footer({ cities }: { cities?: City[] }) {
     <footer className="bg-charcoal">
 
       {/* CTA Strip */}
-      <div className="bg-spice px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
-        <p className="font-display text-white text-lg font-bold">
-          Not sure what to eat? Let AI decide. 🤖
-        </p>
-        <Link
-          href="/suggest"
-          className="font-body text-sm font-bold bg-cream text-spice px-6 py-2.5 rounded-full hover:bg-white transition-colors uppercase tracking-wider flex-shrink-0"
-        >
-          Try AI Suggest →
-        </Link>
-      </div>
+      {process.env.NEXT_PUBLIC_ENABLE_AI_SUGGEST === 'true' && (
+        <div className="bg-spice px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
+          <p className="font-display text-white text-lg font-bold">
+            Not sure what to eat? Let AI decide. 🤖
+          </p>
+          <Link
+            href="/suggest"
+            className="font-body text-sm font-bold bg-cream text-spice px-6 py-2.5 rounded-full hover:bg-white transition-colors uppercase tracking-wider flex-shrink-0"
+          >
+            Try AI Suggest →
+          </Link>
+        </div>
+      )}
 
       {/* Main section */}
       <div className="max-w-6xl mx-auto px-6 pt-5 pb-8 border-b border-white/10">
 
         {/* Logo */}
-        <Image src="/logo4.png" alt="Foody" width={220} height={130} className="object-contain object-left mb-2 -ml-3" style={{ mixBlendMode: 'screen' }} />
+        <div className="mb-2">
+          <p className="font-body text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#C8A97E' }}>
+            Real Review
+          </p>
+          <p className="font-display text-5xl font-bold text-warm-100 leading-none">
+            Chakh
+          </p>
+        </div>
 
         {/* 3-column — all start at description text level */}
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-10">
@@ -75,7 +83,7 @@ export default function Footer({ cities }: { cities?: City[] }) {
           </p>
           <div className="flex flex-col gap-3">
             {[
-              { label: 'AI Food Suggest', href: '/suggest' },
+              ...(process.env.NEXT_PUBLIC_ENABLE_AI_SUGGEST === 'true' ? [{ label: 'AI Food Suggest', href: '/suggest' }] : []),
               { label: 'Top Rated Places', href: '/' },
               { label: 'Must Try Dishes', href: '/' },
               { label: 'About Us', href: '#' },
@@ -100,7 +108,7 @@ export default function Footer({ cities }: { cities?: City[] }) {
           ))}
         </div>
         <p className="font-body text-xs text-muted">
-          © 2026 Foody — Real reviews. Real taste.
+          © 2026 Chakh — Real reviews. Real taste.
         </p>
       </div>
 

@@ -1,4 +1,4 @@
--- Foody Database Schema
+-- Chakh Database Schema
 -- Run this in your Supabase SQL Editor
 
 -- Cities

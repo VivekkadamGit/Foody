@@ -16,7 +16,7 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Foody — The Honest Food Guide',
+  title: 'Chakh — The Honest Food Guide',
   description: 'Genuine food reviews by local testers. Find the best dishes and restaurants across India.',
 }
 

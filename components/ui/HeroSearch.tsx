@@ -15,7 +15,7 @@ export default function HeroSearch({ cityDishes }: { cityDishes: CityDishes[] })
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'found' | 'denied'>('idle')
 
   useEffect(() => {
-    const CACHE_KEY = 'foody_nearby_city'
+    const CACHE_KEY = 'chakh_nearby_city'
     const CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours
 
     const cached = localStorage.getItem(CACHE_KEY)

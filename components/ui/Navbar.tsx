@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 type City = { name: string; slug: string }
@@ -16,13 +15,9 @@ export default function Navbar({ cities }: { cities?: City[] }) {
         style={{ boxShadow: '0 4px 28px rgba(26, 22, 20, 0.10), 0 1px 4px rgba(26, 22, 20, 0.06)' }}
       >
         <Link href="/" className="flex-shrink-0">
-          <Image
-            src="/logo.png"
-            alt="Foody"
-            width={96}
-            height={32}
-            className="object-contain"
-          />
+          <span className="font-display text-2xl font-bold tracking-tight text-spice">
+            Chakh
+          </span>
         </Link>
 
         <div className="flex items-center gap-7">
@@ -36,16 +31,18 @@ export default function Navbar({ cities }: { cities?: City[] }) {
             </Link>
           ))}
 
-          <Link
-            href="/suggest"
-            className={`font-body text-sm font-semibold px-5 py-2 rounded-full transition-all duration-150 ${
-              pathname === '/suggest'
-                ? 'bg-spice text-cream'
-                : 'bg-charcoal text-cream hover:bg-spice'
-            }`}
-          >
-            AI Suggest
-          </Link>
+          {process.env.NEXT_PUBLIC_ENABLE_AI_SUGGEST === 'true' && (
+            <Link
+              href="/suggest"
+              className={`font-body text-sm font-semibold px-5 py-2 rounded-full transition-all duration-150 ${
+                pathname === '/suggest'
+                  ? 'bg-spice text-cream'
+                  : 'bg-charcoal text-cream hover:bg-spice'
+              }`}
+            >
+              AI Suggest
+            </Link>
+          )}
         </div>
       </nav>
     </div>
