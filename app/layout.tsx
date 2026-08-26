@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Playfair_Display, DM_Sans } from 'next/font/google'
+import { Playfair_Display, DM_Sans, Anek_Latin, Barlow_Condensed } from 'next/font/google'
 import './globals.css'
 
 const playfair = Playfair_Display({
@@ -15,6 +15,20 @@ const dmSans = DM_Sans({
   display: 'swap',
 })
 
+const anekLatin = Anek_Latin({
+  subsets: ['latin'],
+  variable: '--font-anek',
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+})
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ['latin'],
+  variable: '--font-barlow',
+  weight: ['500', '600', '700'],
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
   title: 'Chakh — The Honest Food Guide',
   description: 'Genuine food reviews by local testers. Find the best dishes and restaurants across India.',
@@ -23,7 +37,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${playfair.variable} ${dmSans.variable} font-body bg-cream text-charcoal antialiased`}>
+      <body className={`${playfair.variable} ${dmSans.variable} ${anekLatin.variable} ${barlowCondensed.variable} font-body bg-cream text-charcoal antialiased`}>
         {children}
       </body>
     </html>

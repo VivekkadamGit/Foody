@@ -25,13 +25,9 @@ export default function Footer({ cities }: { cities?: City[] }) {
       <div className="max-w-6xl mx-auto px-6 pt-5 pb-8 border-b border-white/10">
 
         {/* Logo */}
-        <div className="mb-2">
-          <p className="font-body text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#C8A97E' }}>
-            Real Review
-          </p>
-          <p className="font-display text-5xl font-bold text-warm-100 leading-none">
-            Chakh
-          </p>
+        <div className="mb-2 flex items-baseline">
+          <span className="font-anek text-4xl font-extrabold tracking-tight text-ember-light">chakh</span>
+          <span className="w-2 h-2 rounded-full bg-ember ml-1.5" />
         </div>
 
         {/* 3-column — all start at description text level */}
@@ -84,8 +80,9 @@ export default function Footer({ cities }: { cities?: City[] }) {
           <div className="flex flex-col gap-3">
             {[
               ...(process.env.NEXT_PUBLIC_ENABLE_AI_SUGGEST === 'true' ? [{ label: 'AI Food Suggest', href: '/suggest' }] : []),
-              { label: 'Top Rated Places', href: '/' },
               { label: 'Must Try Dishes', href: '/' },
+              { label: "What's New", href: '/' },
+              { label: 'Watch', href: '/' },
               { label: 'About Us', href: '#' },
             ].map(({ label, href }) => (
               <Link key={label} href={href}

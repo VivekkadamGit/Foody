@@ -11,6 +11,8 @@ const config: Config = {
       fontFamily: {
         display: ['var(--font-playfair)', 'Georgia', 'serif'],
         body: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
+        anek: ['var(--font-anek)', 'system-ui', 'sans-serif'],
+        barlow: ['var(--font-barlow)', 'system-ui', 'sans-serif'],
       },
       colors: {
         cream: '#FAF6EF',
@@ -26,6 +28,23 @@ const config: Config = {
           100: '#F0E8DC',
           200: '#DDD0C0',
         },
+        // "Design 8a" dark palette — used on the home page hero/ranking sections only
+        ink: {
+          DEFAULT: '#17110e',
+          light: '#1d1512',
+          card: '#241a15',
+        },
+        ember: {
+          DEFAULT: '#d9482b',
+          light: '#ee8a34',
+        },
+        sand: {
+          DEFAULT: '#a8998c',
+          dark: '#8b8578',
+          darker: '#6f665d',
+        },
+        gold2: '#c9a46b',
+        confirmed: '#3fbb84',
       },
     },
   },
