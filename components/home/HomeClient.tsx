@@ -33,7 +33,9 @@ const ZONES = [
   () => ({ x: 78 + Math.random() * 18, y: 22 + Math.random() * 48 }),
 ]
 
-export default function HomeClient({ bundles }: { bundles: CityBundle[] }) {
+type LockedCity = { name: string; slug: string }
+
+export default function HomeClient({ bundles, lockedCities = [] }: { bundles: CityBundle[]; lockedCities?: LockedCity[] }) {
   const router = useRouter()
   const [activeSlug, setActiveSlug] = useState(bundles[0]?.city.slug ?? '')
   const [query, setQuery] = useState('')
@@ -337,7 +339,10 @@ export default function HomeClient({ bundles }: { bundles: CityBundle[] }) {
         <WatchSection />
       </div>
       <CitiesGrid
-        cities={bundles.map((b) => ({ name: b.city.name, slug: b.city.slug, dishCount: b.dishCount }))}
+        cities={[
+          ...bundles.map((b) => ({ name: b.city.name, slug: b.city.slug, dishCount: b.dishCount, locked: false })),
+          ...lockedCities.map((c) => ({ name: c.name, slug: c.slug, dishCount: 0, locked: true })),
+        ]}
         homeSlug={active.city.slug}
       />
     </>

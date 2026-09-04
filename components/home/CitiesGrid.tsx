@@ -1,6 +1,15 @@
 import Link from 'next/link'
 
-type CityStat = { name: string; slug: string; dishCount: number }
+type CityStat = { name: string; slug: string; dishCount: number; locked?: boolean }
+
+function LockIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  )
+}
 
 export default function CitiesGrid({ cities, homeSlug }: { cities: CityStat[]; homeSlug?: string }) {
   return (
@@ -18,6 +27,25 @@ export default function CitiesGrid({ cities, homeSlug }: { cities: CityStat[]; h
           {cities.map((city) => {
             const isHome = city.slug === homeSlug
             const hasDishes = city.dishCount > 0
+
+            if (city.locked) {
+              return (
+                <div
+                  key={city.slug}
+                  aria-disabled="true"
+                  className="rounded-xl p-5 border border-dashed border-white/[0.10] opacity-60 cursor-not-allowed"
+                >
+                  <div className="flex justify-between items-baseline mb-2.5">
+                    <span className="font-anek text-[19px] font-semibold text-sand-dark">{city.name}</span>
+                    <span className="flex items-center gap-1 font-anek text-[9.5px] font-semibold px-2 py-1 rounded bg-white/[0.06] text-sand-darker tracking-wide">
+                      <LockIcon /> LOCKED
+                    </span>
+                  </div>
+                  <p className="font-anek text-[13px] m-0 text-sand-darker">Coming soon</p>
+                </div>
+              )
+            }
+
             return (
               <Link
                 key={city.slug}

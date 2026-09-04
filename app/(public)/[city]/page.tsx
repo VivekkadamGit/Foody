@@ -23,6 +23,18 @@ export default async function CityPage({
 
   if (!city) notFound()
 
+  if (city.status === 'coming_soon') {
+    return (
+      <div className="text-center py-24">
+        <p className="font-display text-8xl font-bold text-warm-200 mb-6">🔒</p>
+        <h1 className="font-display text-3xl font-bold text-charcoal mb-3">{city.name} is coming soon</h1>
+        <p className="font-body text-muted max-w-md mx-auto">
+          We haven&apos;t started tasting our way through {city.name} yet — check back once filming starts here.
+        </p>
+      </div>
+    )
+  }
+
   let query = supabase
     .from('restaurants')
     .select(`

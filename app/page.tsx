@@ -14,9 +14,29 @@ const FALLBACK_WATERMARK_DISHES: Record<string, string[]> = {
 
 const NEW_WINDOW_DAYS = 21
 
+// Surat is the current default/home city. Ahmedabad and Vadodara are also live.
+// Order controls the default city before geolocation resolves (and the fallback if it fails/denies).
+const CITY_PRIORITY = ['surat', 'ahmedabad', 'vadodara']
+
 // Used only when the database is unreachable or has no data yet (e.g. fresh clone,
 // offline dev), so the homepage never renders blank — mirrors the old FALLBACK_CITIES pattern.
 const FALLBACK_BUNDLES: CityBundle[] = [
+  {
+    city: { name: 'Surat', slug: 'surat' },
+    dishCount: 14,
+    watermarkDishes: ['Locho', 'Ghari', 'Surti Undhiyu', 'Ponk Vada', 'Rasawala Khaman', 'Dabeli'],
+    ranking: [
+      { id: 'fallback-s1', name: 'Locho', restaurantName: 'Maskati Locho House', restaurantArea: 'Maskati Market', priceSymbol: '₹', score: 8.8, reviewCount: 4, isMustTry: true },
+      { id: 'fallback-s2', name: 'Ghari', restaurantName: 'Rasoi', restaurantArea: 'Athwalines', priceSymbol: '₹₹', score: 8.6, reviewCount: 3, isMustTry: false },
+      { id: 'fallback-s3', name: 'Ponk Vada', restaurantName: 'Gandhi Bhog', restaurantArea: 'Varachha', priceSymbol: '₹', score: 8.2, reviewCount: 1, isMustTry: false },
+    ],
+    justTasted: [
+      { name: 'Ponk Vada', restaurantName: 'Gandhi Bhog, Varachha', score: 8.2, reviewCount: 1, date: new Date(Date.now() - 5 * 86400000).toISOString() },
+    ],
+    whatsNew: [
+      { type: 'new_opening', name: 'Rasawala Khaman corner, Varachha', date: new Date(Date.now() - 4 * 86400000).toISOString() },
+    ],
+  },
   {
     city: { name: 'Ahmedabad', slug: 'ahmedabad' },
     dishCount: 64,
@@ -40,33 +60,6 @@ const FALLBACK_BUNDLES: CityBundle[] = [
     ],
   },
   {
-    city: { name: 'Surat', slug: 'surat' },
-    dishCount: 14,
-    watermarkDishes: ['Locho', 'Ghari', 'Surti Undhiyu', 'Ponk Vada', 'Rasawala Khaman', 'Dabeli'],
-    ranking: [
-      { id: 'fallback-s1', name: 'Locho', restaurantName: 'Maskati Locho House', restaurantArea: 'Maskati Market', priceSymbol: '₹', score: 8.8, reviewCount: 4, isMustTry: true },
-      { id: 'fallback-s2', name: 'Ghari', restaurantName: 'Rasoi', restaurantArea: 'Athwalines', priceSymbol: '₹₹', score: 8.6, reviewCount: 3, isMustTry: false },
-      { id: 'fallback-s3', name: 'Ponk Vada', restaurantName: 'Gandhi Bhog', restaurantArea: 'Varachha', priceSymbol: '₹', score: 8.2, reviewCount: 1, isMustTry: false },
-    ],
-    justTasted: [
-      { name: 'Ponk Vada', restaurantName: 'Gandhi Bhog, Varachha', score: 8.2, reviewCount: 1, date: new Date(Date.now() - 5 * 86400000).toISOString() },
-    ],
-    whatsNew: [],
-  },
-  {
-    city: { name: 'Indore', slug: 'indore' },
-    dishCount: 6,
-    watermarkDishes: ['Poha Jalebi', 'Bhutte Ka Kees', 'Sabudana Khichdi', 'Dal Bafla', 'Garadu'],
-    ranking: [
-      { id: 'fallback-i1', name: 'Poha Jalebi', restaurantName: 'Sarafa Bazaar stall', restaurantArea: null, priceSymbol: '₹', score: 8.9, reviewCount: 2, isMustTry: true },
-      { id: 'fallback-i2', name: 'Bhutte Ka Kees', restaurantName: 'Johnny Hot Dog corner', restaurantArea: 'Sarafa Bazaar', priceSymbol: '₹', score: 8.3, reviewCount: 1, isMustTry: false },
-    ],
-    justTasted: [
-      { name: 'Bhutte Ka Kees', restaurantName: 'Johnny Hot Dog corner', score: 8.3, reviewCount: 1, date: new Date(Date.now() - 2 * 86400000).toISOString() },
-    ],
-    whatsNew: [],
-  },
-  {
     city: { name: 'Vadodara', slug: 'vadodara' },
     dishCount: 0,
     watermarkDishes: ['Sev Usal', 'Gathiya', 'Chakri', 'Basundi', 'Shrikhand', 'Patra', 'Handvo'],
@@ -76,15 +69,17 @@ const FALLBACK_BUNDLES: CityBundle[] = [
   },
 ]
 
+const FALLBACK_LOCKED_CITIES = [{ name: 'Indore', slug: 'indore' }]
+
 export default async function HomePage() {
   const supabase = await createClient()
 
   const [{ data: cities }, { data: restaurants }] = await Promise.all([
-    supabase.from('cities').select('name, slug').order('name'),
+    supabase.from('cities').select('name, slug, status').order('name'),
     supabase
       .from('restaurants')
       .select(
-        `id, name, address, price_range, created_at, cities!inner(name, slug),
+        `id, name, address, price_range, created_at, cities!inner(name, slug, status),
          dishes(id, name, is_must_try, created_at, reviews(rating, created_at))`
       )
       .is('deleted_at', null),
@@ -93,15 +88,26 @@ export default async function HomePage() {
   if (!cities || cities.length === 0) {
     return (
       <>
-        <HomeClient bundles={FALLBACK_BUNDLES} />
-        <Footer cities={FALLBACK_BUNDLES.map((b) => b.city)} />
+        <HomeClient bundles={FALLBACK_BUNDLES} lockedCities={FALLBACK_LOCKED_CITIES} />
+        <Footer
+          cities={[
+            ...FALLBACK_BUNDLES.map((b) => ({ ...b.city, status: 'active' })),
+            ...FALLBACK_LOCKED_CITIES.map((c) => ({ ...c, status: 'coming_soon' })),
+          ]}
+        />
       </>
     )
   }
 
+  // Treat missing/null status (e.g. before migration 002 has run) as active, so nothing breaks.
+  const activeCities = cities.filter((c: any) => c.status !== 'coming_soon')
+  const lockedCities = cities
+    .filter((c: any) => c.status === 'coming_soon')
+    .map((c: any) => ({ name: c.name, slug: c.slug }))
+
   const cutoff = Date.now() - NEW_WINDOW_DAYS * 86400000
 
-  const bundles: CityBundle[] = (cities ?? []).map((city: any) => {
+  const bundles: CityBundle[] = activeCities.map((city: any) => {
     const cityRestaurants = (restaurants ?? []).filter((r: any) => (r.cities as any)?.slug === city.slug)
 
     const ranking: RankedDish[] = []
@@ -165,12 +171,20 @@ export default async function HomePage() {
     }
   })
 
-  // Richest city first — it becomes the default "home" view before geolocation resolves
-  bundles.sort((a, b) => b.dishCount - a.dishCount)
+  // Surat first — it's the default "home" view before geolocation resolves and the
+  // fallback if it fails or is denied. Ahmedabad/Vadodara follow; anything else falls in after.
+  bundles.sort((a, b) => {
+    const ai = CITY_PRIORITY.indexOf(a.city.slug)
+    const bi = CITY_PRIORITY.indexOf(b.city.slug)
+    if (ai === -1 && bi === -1) return b.dishCount - a.dishCount
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
+  })
 
   return (
     <>
-      <HomeClient bundles={bundles} />
+      <HomeClient bundles={bundles} lockedCities={lockedCities} />
       <Footer cities={cities} />
     </>
   )

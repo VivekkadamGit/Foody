@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-type City = { name: string; slug: string }
+type City = { name: string; slug: string; status?: string }
 
 export default function Footer({ cities }: { cities?: City[] }) {
   return (
@@ -59,13 +59,19 @@ export default function Footer({ cities }: { cities?: City[] }) {
           </p>
           <div className="flex flex-col gap-3">
             {(cities ?? []).length > 0
-              ? (cities ?? []).map((city) => (
-                  <Link key={city.slug} href={`/${city.slug}`}
-                    className="font-body text-sm text-muted hover:text-warm-200 transition-colors w-fit">
-                    {city.name}
-                  </Link>
-                ))
-              : ['Indore', 'Surat', 'Vadodara'].map((name) => (
+              ? (cities ?? []).map((city) =>
+                  city.status === 'coming_soon' ? (
+                    <span key={city.slug} className="font-body text-sm text-muted/50 w-fit flex items-center gap-1.5">
+                      {city.name} <span className="text-[10px] uppercase tracking-wide">· soon</span>
+                    </span>
+                  ) : (
+                    <Link key={city.slug} href={`/${city.slug}`}
+                      className="font-body text-sm text-muted hover:text-warm-200 transition-colors w-fit">
+                      {city.name}
+                    </Link>
+                  )
+                )
+              : ['Surat', 'Ahmedabad', 'Vadodara'].map((name) => (
                   <span key={name} className="font-body text-sm text-muted">{name}</span>
                 ))
             }
