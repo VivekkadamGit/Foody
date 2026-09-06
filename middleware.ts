@@ -25,11 +25,16 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  const isLoginPage = request.nextUrl.pathname === '/admin/login'
+
   // Protect all /admin routes except /admin/login
-  if (request.nextUrl.pathname.startsWith('/admin') &&
-      request.nextUrl.pathname !== '/admin/login' &&
-      !user) {
+  if (request.nextUrl.pathname.startsWith('/admin') && !isLoginPage && !user) {
     return NextResponse.redirect(new URL('/admin/login', request.url))
+  }
+
+  // Already signed in? The login form has nothing to offer.
+  if (isLoginPage && user) {
+    return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   return supabaseResponse
