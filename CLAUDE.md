@@ -61,21 +61,30 @@ Directus auto-discovers the existing Postgres schema. After running a DB migrati
 
 The Next.js app deploys to **Vercel** (Hobby free plan). Each branch gets a preview deployment automatically. Production is the `master` branch.
 
-## Image Storage (Vercel Blob)
+## Image Storage (Supabase Storage)
 
-Images (restaurant covers, dish photos) are stored in **Vercel Blob** via the `@vercel/blob` package. Free Hobby plan: 500 MB storage + 1 GB transfer/month.
+Dish photos are stored in **Supabase Storage**, in the public `dish-photos` bucket
+created by migration `004_dish_photos_bucket.sql`. Uploading before that bucket
+existed was what produced "Bucket not found".
 
-Upload pattern (Server Actions only):
+Upload pattern (see `app/admin/restaurants/[id]/AddDishForm.tsx`):
 ```ts
-import { put } from '@vercel/blob'
-const blob = await put(filename, file, { access: 'public' })
-// save blob.url to cover_image_url or photo_url in Supabase
+const supabase = createClient()
+await supabase.storage.from('dish-photos').upload(path, file)
+const { data: { publicUrl } } = supabase.storage.from('dish-photos').getPublicUrl(path)
+// save publicUrl to dishes.photo_url
 ```
 
-- `restaurants.cover_image_url` — already exists, stores Vercel Blob URL
-- `dishes.photo_url` — added via migration `002_dish_photo_url.sql`
+- `dishes.photo_url` — stores the public Supabase Storage URL
+- `restaurants.cover_image_url` — column exists, but nothing uploads to it yet
 
-Public pages read the URL directly with a standard `<img>` tag — no signed URLs needed.
+Public pages read the URL directly with a standard `<img>` tag — the bucket is
+public, so no signed URLs are needed. Writes are restricted to authenticated
+testers by RLS policy.
+
+> Earlier revisions of this file described Vercel Blob (`@vercel/blob`,
+> `BLOB_READ_WRITE_TOKEN`). No code uses it and the token is not configured —
+> Supabase Storage is the actual implementation.
 
 ## Planned Features
 
@@ -96,6 +105,7 @@ Required in `.env.local`:
 - `SUPABASE_SERVICE_ROLE_KEY` — secret key (server-only, used in API routes)
 - `GEMINI_API_KEY` — Google Gemini API key for AI suggest feature
 - `DATABASE_URL` — Supabase session pooler connection string (for running migrations)
-- `BLOB_READ_WRITE_TOKEN` — Vercel Blob token (from Vercel project dashboard → Storage tab)
+
+Image uploads use Supabase Storage and need no extra token beyond the keys above.
 
 Directus reads from `cms/.env` — see that file for its required variables.
