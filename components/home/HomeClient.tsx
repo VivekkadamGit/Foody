@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { qualityIcon, qualityTier } from '@/lib/dishScore'
 import MustTryRanking, { RankedDish } from './MustTryRanking'
+import QualityBadge from './QualityBadge'
 import CitiesGrid from './CitiesGrid'
 
 export type CityBundle = {
@@ -268,7 +268,7 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
                       </p>
                     </div>
                     <div className="flex items-center gap-2.5 flex-shrink-0">
-                      <span className="text-lg">{qualityIcon(qualityTier(d.score, d.reviewCount))}</span>
+                      <QualityBadge score={d.score} reviewCount={d.reviewCount} size="sm" dark={false} />
                       <span className="font-barlow text-2xl font-bold text-[#1c1611]">{d.score.toFixed(1)}</span>
                     </div>
                   </Link>

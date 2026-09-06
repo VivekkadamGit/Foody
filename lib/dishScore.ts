@@ -9,12 +9,20 @@ export function qualityTier(score: number, reviewCount: number): QualityTier {
 }
 
 export function qualityIcon(tier: QualityTier): string {
-  return tier === 'top' ? '🔥' : tier === 'new' ? '🌱' : '⭐'
+  return tier === 'top' ? '🏅' : tier === 'new' ? '🌱' : '⭐'
 }
 
 export function qualityLabel(tier: QualityTier): string {
-  return tier === 'top' ? 'Top rated' : tier === 'new' ? 'New' : 'Rated'
+  return tier === 'top' ? 'Certified' : tier === 'new' ? 'New' : 'Rated'
 }
+
+// Explained legend for the quality filter — icon + name + a one-line rule, so
+// people don't have to guess what a badge means (à la Rotten Tomatoes' Tomatometer filter).
+export const QUALITY_LEGEND: { tier: QualityTier; icon: string; label: string; description: string }[] = [
+  { tier: 'top', icon: '🏅', label: 'Certified', description: '9.0+ score — the best of the best.' },
+  { tier: 'mid', icon: '⭐', label: 'Rated', description: 'Tasted more than once, holding steady.' },
+  { tier: 'new', icon: '🌱', label: 'New', description: 'Just added — first taste, score is provisional.' },
+]
 
 export function scoreOutOf10(avgRatingOutOf5: number): number {
   return Math.round(avgRatingOutOf5 * 2 * 10) / 10
