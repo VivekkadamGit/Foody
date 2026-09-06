@@ -278,17 +278,23 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
 
             <div className="flex items-center justify-between px-5 py-3 bg-[#fdfbf8] border-t border-[#ede8e1] flex-wrap gap-2">
               <div className="flex items-center gap-3.5 font-anek text-[13.5px] flex-wrap">
-                <span className="text-sand-dark">Popular:</span>
-                {popularTags.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => setQuery(name)}
-                    className="text-ember hover:text-ember-light transition-colors font-medium"
-                  >
-                    {name}
-                  </button>
-                ))}
+                {popularTags.length > 0 ? (
+                  <>
+                    <span className="text-sand-dark">Popular:</span>
+                    {popularTags.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => setQuery(name)}
+                        className="text-ember hover:text-ember-light transition-colors font-medium"
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <span className="text-sand-dark">No dishes rated here yet</span>
+                )}
               </div>
               <span className="font-anek text-[12.5px] text-[#a09a90]">{active.city.name}</span>
             </div>

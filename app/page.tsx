@@ -66,7 +66,7 @@ const FALLBACK_LOCKED_CITIES = [{ name: 'Indore', slug: 'indore' }]
 export default async function HomePage() {
   const supabase = await createClient()
 
-  const [{ data: cities }, { data: restaurants }] = await Promise.all([
+  const [{ data: cities, error: citiesError }, { data: restaurants, error: restaurantsError }] = await Promise.all([
     supabase.from('cities').select('name, slug, status').order('name'),
     supabase
       .from('restaurants')
@@ -77,9 +77,33 @@ export default async function HomePage() {
       .is('deleted_at', null),
   ])
 
+  // Never swallow a failed query — a silent failure here once put invented scores on production.
+  if (citiesError) console.error('[home] cities query failed:', citiesError.message)
+  if (restaurantsError) console.error('[home] restaurants query failed:', restaurantsError.message)
+
   if (!cities || cities.length === 0) {
+    // The sample dataset is a DEV convenience only. Serving invented restaurants and
+    // scores in production would directly contradict "every score earned firsthand".
+    if (process.env.NODE_ENV === 'production') {
+      return (
+        <>
+          <main className="min-h-[60vh] flex flex-col items-center justify-center bg-ink px-6 text-center">
+            <p className="font-anek text-2xl font-bold text-[#fdf9f4] mb-2">Nothing to serve yet</p>
+            <p className="font-anek text-sand max-w-sm">
+              We couldn&apos;t load any dishes right now. Rather than show you something we haven&apos;t tasted,
+              we&apos;d rather show you nothing. Try again shortly.
+            </p>
+          </main>
+          <Footer />
+        </>
+      )
+    }
+
     return (
       <>
+        <div className="bg-ember text-white font-anek text-[12.5px] font-semibold text-center py-1.5 px-4">
+          Sample data — the database returned no cities. Not real scores.
+        </div>
         <HomeClient bundles={FALLBACK_BUNDLES} lockedCities={FALLBACK_LOCKED_CITIES} />
         <Footer
           cities={[
