@@ -43,27 +43,54 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
   const [words, setWords] = useState<FloatingWord[]>([])
   const wordId = useRef(0)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const activeSpotsRef = useRef<{ id: number; x: number; y: number }[]>([])
+  const recentTextsRef = useRef<string[]>([])
 
   const active = bundles.find((b) => b.city.slug === activeSlug) ?? bundles[0]
+
+  const MIN_SPACING = 26 // percentage points apart, so concurrent words don't crowd
+
+  function pickSpacedZone() {
+    let zone = ZONES[Math.floor(Math.random() * ZONES.length)]()
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const candidate = ZONES[Math.floor(Math.random() * ZONES.length)]()
+      const tooClose = activeSpotsRef.current.some(
+        (spot) => Math.hypot(spot.x - candidate.x, spot.y - candidate.y) < MIN_SPACING
+      )
+      zone = candidate
+      if (!tooClose) break
+    }
+    return zone
+  }
+
+  function pickDish(dishes: string[]) {
+    const unused = dishes.filter((d) => !recentTextsRef.current.includes(d))
+    const pool = unused.length > 0 ? unused : dishes
+    const text = pool[Math.floor(Math.random() * pool.length)]
+    recentTextsRef.current = [text, ...recentTextsRef.current].slice(0, Math.min(5, dishes.length - 1))
+    return text
+  }
 
   function spawnWord(dishes: string[]) {
     if (dishes.length === 0) return
     const id = ++wordId.current
-    const size = 60 + Math.random() * 60
+    const size = 60 + Math.random() * 50
     const peak = 0.5 + Math.random() * 0.15
     const dur = 10 + Math.random() * 6
-    const zone = ZONES[Math.floor(Math.random() * ZONES.length)]()
+    const zone = pickSpacedZone()
+
+    activeSpotsRef.current.push({ id, x: zone.x, y: zone.y })
     setWords((prev) => [
       ...prev,
       {
         id,
-        text: dishes[Math.floor(Math.random() * dishes.length)],
+        text: pickDish(dishes),
         style: {
           position: 'absolute',
           left: `${zone.x}%`,
           top: `${zone.y}%`,
           fontSize: `${size}px`,
-          color: '#2c2018',
+          color: '#5c4834',
           fontWeight: 700,
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
@@ -75,15 +102,20 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
         },
       },
     ])
-    setTimeout(() => setWords((prev) => prev.filter((w) => w.id !== id)), (dur + 1) * 1000)
+    setTimeout(() => {
+      setWords((prev) => prev.filter((w) => w.id !== id))
+      activeSpotsRef.current = activeSpotsRef.current.filter((spot) => spot.id !== id)
+    }, (dur + 1) * 1000)
   }
 
   useEffect(() => {
     if (!active) return
     const dishes = active.watermarkDishes
-    for (let i = 0; i < 4; i++) setTimeout(() => spawnWord(dishes), i * 1400)
+    activeSpotsRef.current = []
+    recentTextsRef.current = []
+    for (let i = 0; i < 4; i++) setTimeout(() => spawnWord(dishes), i * 1800)
     if (timer.current) clearInterval(timer.current)
-    timer.current = setInterval(() => spawnWord(dishes), 2800)
+    timer.current = setInterval(() => spawnWord(dishes), 3600)
     return () => { if (timer.current) clearInterval(timer.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSlug])

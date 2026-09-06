@@ -6,10 +6,22 @@ import type { RankedDish } from '@/components/home/MustTryRanking'
 import type { WhatsNewItem } from '@/components/home/WhatsNewPanel'
 
 const FALLBACK_WATERMARK_DISHES: Record<string, string[]> = {
-  ahmedabad: ['Dhokla', 'Fafda Jalebi', 'Khandvi', 'Undhiyu', 'Thepla', 'Dal Baati', 'Khichu', 'Sev Khamani'],
-  surat: ['Locho', 'Ghari', 'Surti Undhiyu', 'Ponk Vada', 'Rasawala Khaman', 'Dabeli', 'Jalebi'],
-  vadodara: ['Sev Usal', 'Gathiya', 'Chakri', 'Basundi', 'Shrikhand', 'Patra', 'Handvo'],
-  indore: ['Poha Jalebi', 'Bhutte Ka Kees', 'Sabudana Khichdi', 'Dal Bafla', 'Garadu', 'Ratlami Sev'],
+  surat: [
+    'Locho', 'Ghari', 'Surti Undhiyu', 'Ponk Vada', 'Rasawala Khaman', 'Dabeli', 'Jalebi',
+    'Sutarfeni', 'Sev Khamani', 'Aamras Puri', 'Chola Puri', 'Surti Bhajiya', 'Khaman', 'Fafda', 'Gol Gappa',
+  ],
+  ahmedabad: [
+    'Dhokla', 'Fafda Jalebi', 'Khandvi', 'Undhiyu', 'Thepla', 'Mohanthal', 'Sev Tameta',
+    'Shrikhand', 'Basundi', 'Dal Baati', 'Khichu', 'Kadhi', 'Patra', 'Handvo', 'Ghughra',
+  ],
+  vadodara: [
+    'Sev Usal', 'Gathiya', 'Chakri', 'Basundi', 'Shrikhand', 'Patra', 'Handvo', 'Muthia',
+    'Kadhi Khichdi', 'Fafda', 'Mohanthal', 'Kopra Pak', 'Bhakar Vadi', 'Kesar Penda', 'Sukhdi',
+  ],
+  indore: [
+    'Poha Jalebi', 'Bhutte Ka Kees', 'Sabudana Khichdi', 'Dal Bafla', 'Garadu', 'Ratlami Sev',
+    'Namkeen', 'Shikanji', 'Imarti', 'Mawa Bati', 'Kachori', 'Samosa', 'Dahi Vada', 'Kadhi Bada', 'Malpua',
+  ],
 }
 
 const NEW_WINDOW_DAYS = 21
@@ -24,7 +36,7 @@ const FALLBACK_BUNDLES: CityBundle[] = [
   {
     city: { name: 'Surat', slug: 'surat' },
     dishCount: 14,
-    watermarkDishes: ['Locho', 'Ghari', 'Surti Undhiyu', 'Ponk Vada', 'Rasawala Khaman', 'Dabeli'],
+    watermarkDishes: FALLBACK_WATERMARK_DISHES.surat,
     ranking: [
       { id: 'fallback-s1', name: 'Locho', restaurantName: 'Maskati Locho House', restaurantArea: 'Maskati Market', priceSymbol: '₹', score: 8.8, reviewCount: 4, isMustTry: true },
       { id: 'fallback-s2', name: 'Ghari', restaurantName: 'Rasoi', restaurantArea: 'Athwalines', priceSymbol: '₹₹', score: 8.6, reviewCount: 3, isMustTry: false },
@@ -40,7 +52,7 @@ const FALLBACK_BUNDLES: CityBundle[] = [
   {
     city: { name: 'Ahmedabad', slug: 'ahmedabad' },
     dishCount: 64,
-    watermarkDishes: ['Khandvi', 'Undhiyu', 'Misal Pav', 'Dal Baati', 'Kothu Parotta', 'Fafda', 'Dhokla', 'Thepla'],
+    watermarkDishes: FALLBACK_WATERMARK_DISHES.ahmedabad,
     ranking: [
       { id: 'fallback-1', name: 'Fafda jalebi', restaurantName: 'Chandravilas', restaurantArea: 'Gandhi Road', priceSymbol: '₹₹', score: 9.2, reviewCount: 6, isMustTry: true },
       { id: 'fallback-2', name: 'Dhokla', restaurantName: 'Das Khaman', restaurantArea: 'Naranpura', priceSymbol: '₹', score: 8.9, reviewCount: 4, isMustTry: true },
@@ -62,7 +74,7 @@ const FALLBACK_BUNDLES: CityBundle[] = [
   {
     city: { name: 'Vadodara', slug: 'vadodara' },
     dishCount: 0,
-    watermarkDishes: ['Sev Usal', 'Gathiya', 'Chakri', 'Basundi', 'Shrikhand', 'Patra', 'Handvo'],
+    watermarkDishes: FALLBACK_WATERMARK_DISHES.vadodara,
     ranking: [],
     justTasted: [],
     whatsNew: [],
