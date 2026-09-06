@@ -1,18 +1,19 @@
-// Confidence tiers and 10-point scores derived from real review counts/ratings —
-// never fabricated, since these are the app's core trust signals.
+// Quality tier + icon, derived from the real score and review count — a quick visual
+// read ("is this worth it") rather than exposing our own visit/review bookkeeping.
 
-export type ConfidenceTier = 'FIRST_TASTE' | 'HOLDING_UP' | 'CONFIRMED'
+export type QualityTier = 'top' | 'mid' | 'new'
 
-export function confidenceTier(reviewCount: number): ConfidenceTier {
-  if (reviewCount >= 3) return 'CONFIRMED'
-  if (reviewCount === 2) return 'HOLDING_UP'
-  return 'FIRST_TASTE'
+export function qualityTier(score: number, reviewCount: number): QualityTier {
+  if (reviewCount <= 1) return 'new'
+  return score >= 9.0 ? 'top' : 'mid'
 }
 
-export function confidenceLabel(reviewCount: number): string {
-  const tier = confidenceTier(reviewCount)
-  const word = tier === 'CONFIRMED' ? 'CONFIRMED' : tier === 'HOLDING_UP' ? 'HOLDING UP' : 'FIRST TASTE'
-  return `${word} · ${reviewCount}×`
+export function qualityIcon(tier: QualityTier): string {
+  return tier === 'top' ? '🔥' : tier === 'new' ? '🌱' : '⭐'
+}
+
+export function qualityLabel(tier: QualityTier): string {
+  return tier === 'top' ? 'Top rated' : tier === 'new' ? 'New' : 'Rated'
 }
 
 export function scoreOutOf10(avgRatingOutOf5: number): number {

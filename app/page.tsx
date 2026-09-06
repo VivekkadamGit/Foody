@@ -3,7 +3,6 @@ import HomeClient, { CityBundle } from '@/components/home/HomeClient'
 import { createClient } from '@/lib/supabase/server'
 import { avgRating, scoreOutOf10, priceTierSymbol } from '@/lib/dishScore'
 import type { RankedDish } from '@/components/home/MustTryRanking'
-import type { WhatsNewItem } from '@/components/home/WhatsNewPanel'
 
 const FALLBACK_WATERMARK_DISHES: Record<string, string[]> = {
   surat: [
@@ -24,8 +23,6 @@ const FALLBACK_WATERMARK_DISHES: Record<string, string[]> = {
   ],
 }
 
-const NEW_WINDOW_DAYS = 21
-
 // Surat is the current default/home city. Ahmedabad and Vadodara are also live.
 // Order controls the default city before geolocation resolves (and the fallback if it fails/denies).
 const CITY_PRIORITY = ['surat', 'ahmedabad', 'vadodara']
@@ -38,15 +35,9 @@ const FALLBACK_BUNDLES: CityBundle[] = [
     dishCount: 14,
     watermarkDishes: FALLBACK_WATERMARK_DISHES.surat,
     ranking: [
-      { id: 'fallback-s1', name: 'Locho', restaurantName: 'Maskati Locho House', restaurantArea: 'Maskati Market', priceSymbol: '₹', score: 8.8, reviewCount: 4, isMustTry: true },
-      { id: 'fallback-s2', name: 'Ghari', restaurantName: 'Rasoi', restaurantArea: 'Athwalines', priceSymbol: '₹₹', score: 8.6, reviewCount: 3, isMustTry: false },
-      { id: 'fallback-s3', name: 'Ponk Vada', restaurantName: 'Gandhi Bhog', restaurantArea: 'Varachha', priceSymbol: '₹', score: 8.2, reviewCount: 1, isMustTry: false },
-    ],
-    justTasted: [
-      { name: 'Ponk Vada', restaurantName: 'Gandhi Bhog, Varachha', score: 8.2, reviewCount: 1, date: new Date(Date.now() - 5 * 86400000).toISOString() },
-    ],
-    whatsNew: [
-      { type: 'new_opening', name: 'Rasawala Khaman corner, Varachha', date: new Date(Date.now() - 4 * 86400000).toISOString() },
+      { id: 'fallback-s1', name: 'Locho', restaurantName: 'Maskati Locho House', restaurantArea: 'Maskati Market', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 8.8, reviewCount: 4, isMustTry: true },
+      { id: 'fallback-s2', name: 'Ghari', restaurantName: 'Rasoi', restaurantArea: 'Athwalines', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Sweets'], score: 8.6, reviewCount: 3, isMustTry: false },
+      { id: 'fallback-s3', name: 'Ponk Vada', restaurantName: 'Gandhi Bhog', restaurantArea: 'Varachha', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 8.2, reviewCount: 1, isMustTry: false },
     ],
   },
   {
@@ -54,21 +45,12 @@ const FALLBACK_BUNDLES: CityBundle[] = [
     dishCount: 64,
     watermarkDishes: FALLBACK_WATERMARK_DISHES.ahmedabad,
     ranking: [
-      { id: 'fallback-1', name: 'Fafda jalebi', restaurantName: 'Chandravilas', restaurantArea: 'Gandhi Road', priceSymbol: '₹₹', score: 9.2, reviewCount: 6, isMustTry: true },
-      { id: 'fallback-2', name: 'Dhokla', restaurantName: 'Das Khaman', restaurantArea: 'Naranpura', priceSymbol: '₹', score: 8.9, reviewCount: 4, isMustTry: true },
-      { id: 'fallback-3', name: 'Dal vada', restaurantName: 'Ratanpole corner cart', restaurantArea: null, priceSymbol: '₹', score: 9.0, reviewCount: 3, isMustTry: false },
-      { id: 'fallback-4', name: 'Undhiyu', restaurantName: 'Gordhan Thal', restaurantArea: 'Sindhu Bhavan Rd', priceSymbol: '₹₹₹', score: 8.7, reviewCount: 2, isMustTry: false },
-      { id: 'fallback-5', name: 'Khandvi', restaurantName: 'Gopi Dining Hall', restaurantArea: 'Ellisbridge', priceSymbol: '₹₹', score: 8.5, reviewCount: 1, isMustTry: false },
-      { id: 'fallback-6', name: 'Khaman dhokla', restaurantName: 'Jai Bhavani', restaurantArea: 'Paldi', priceSymbol: '₹', score: 8.4, reviewCount: 1, isMustTry: false },
-    ],
-    justTasted: [
-      { name: 'Khaman dhokla', restaurantName: 'Jai Bhavani, Paldi', score: 8.4, reviewCount: 1, date: new Date(Date.now() - 3 * 86400000).toISOString() },
-      { name: 'Bhungra bateta', restaurantName: 'Lucky Tea Stall, Lal Darwaja', score: 8.1, reviewCount: 2, date: new Date(Date.now() - 10 * 86400000).toISOString() },
-      { name: 'Dal vada', restaurantName: 'Ratanpole corner cart', score: 9.0, reviewCount: 3, date: new Date(Date.now() - 17 * 86400000).toISOString() },
-    ],
-    whatsNew: [
-      { type: 'new_opening', name: 'Kesar Kulfi House, Bopal', date: new Date(Date.now() - 3 * 86400000).toISOString() },
-      { type: 'new_dish', name: 'Cheese khichu at Manek Chowk', score: 7.6, date: new Date(Date.now() - 7 * 86400000).toISOString() },
+      { id: 'fallback-1', name: 'Fafda jalebi', restaurantName: 'Chandravilas', restaurantArea: 'Gandhi Road', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Street Food'], score: 9.2, reviewCount: 6, isMustTry: true },
+      { id: 'fallback-2', name: 'Dhokla', restaurantName: 'Das Khaman', restaurantArea: 'Naranpura', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Gujarati'], score: 8.9, reviewCount: 4, isMustTry: true },
+      { id: 'fallback-3', name: 'Dal vada', restaurantName: 'Ratanpole corner cart', restaurantArea: null, priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 9.0, reviewCount: 3, isMustTry: false },
+      { id: 'fallback-4', name: 'Undhiyu', restaurantName: 'Gordhan Thal', restaurantArea: 'Sindhu Bhavan Rd', priceRange: 3, priceSymbol: '₹₹₹', cuisineTypes: ['Gujarati'], score: 8.7, reviewCount: 2, isMustTry: false },
+      { id: 'fallback-5', name: 'Khandvi', restaurantName: 'Gopi Dining Hall', restaurantArea: 'Ellisbridge', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Gujarati'], score: 8.5, reviewCount: 1, isMustTry: false },
+      { id: 'fallback-6', name: 'Khaman dhokla', restaurantName: 'Jai Bhavani', restaurantArea: 'Paldi', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Gujarati'], score: 8.4, reviewCount: 1, isMustTry: false },
     ],
   },
   {
@@ -76,8 +58,6 @@ const FALLBACK_BUNDLES: CityBundle[] = [
     dishCount: 0,
     watermarkDishes: FALLBACK_WATERMARK_DISHES.vadodara,
     ranking: [],
-    justTasted: [],
-    whatsNew: [],
   },
 ]
 
@@ -91,8 +71,8 @@ export default async function HomePage() {
     supabase
       .from('restaurants')
       .select(
-        `id, name, address, price_range, created_at, cities!inner(name, slug, status),
-         dishes(id, name, is_must_try, created_at, reviews(rating, created_at))`
+        `id, name, address, price_range, cuisine_type, cities!inner(name, slug, status),
+         dishes(id, name, is_must_try, reviews(rating))`
       )
       .is('deleted_at', null),
   ])
@@ -117,22 +97,15 @@ export default async function HomePage() {
     .filter((c: any) => c.status === 'coming_soon')
     .map((c: any) => ({ name: c.name, slug: c.slug }))
 
-  const cutoff = Date.now() - NEW_WINDOW_DAYS * 86400000
-
   const bundles: CityBundle[] = activeCities.map((city: any) => {
     const cityRestaurants = (restaurants ?? []).filter((r: any) => (r.cities as any)?.slug === city.slug)
 
     const ranking: RankedDish[] = []
-    const justTasted: { name: string; restaurantName: string; score: number; reviewCount: number; date: string }[] = []
-    const whatsNew: WhatsNewItem[] = []
 
     for (const r of cityRestaurants) {
       const area = r.address ? String(r.address).split(',')[0].trim() : null
       const priceSymbol = priceTierSymbol(r.price_range)
-
-      if (r.created_at && new Date(r.created_at).getTime() > cutoff && (r.dishes ?? []).length === 0) {
-        whatsNew.push({ type: 'new_opening', name: r.name, date: r.created_at })
-      }
+      const cuisineTypes: string[] = r.cuisine_type ?? []
 
       for (const d of r.dishes ?? []) {
         const reviews = d.reviews ?? []
@@ -145,30 +118,17 @@ export default async function HomePage() {
           name: d.name,
           restaurantName: r.name,
           restaurantArea: area,
+          priceRange: r.price_range ?? 1,
           priceSymbol,
+          cuisineTypes,
           score,
           reviewCount: reviews.length,
           isMustTry: !!d.is_must_try,
         })
-
-        const latestReviewDate = reviews
-          .map((rv: any) => rv.created_at)
-          .filter(Boolean)
-          .sort()
-          .at(-1)
-        if (latestReviewDate) {
-          justTasted.push({ name: d.name, restaurantName: r.name, score, reviewCount: reviews.length, date: latestReviewDate })
-        }
-
-        if (reviews.length === 1 && d.created_at && new Date(d.created_at).getTime() > cutoff) {
-          whatsNew.push({ type: 'new_dish', name: d.name, score, date: d.created_at })
-        }
       }
     }
 
     ranking.sort((a, b) => (b.isMustTry ? 1 : 0) - (a.isMustTry ? 1 : 0) || b.score - a.score)
-    justTasted.sort((a, b) => (a.date < b.date ? 1 : -1))
-    whatsNew.sort((a, b) => (a.date < b.date ? 1 : -1))
 
     const dbWatermarks = ranking.map((d) => d.name)
     const watermarkDishes = dbWatermarks.length > 0 ? dbWatermarks : (FALLBACK_WATERMARK_DISHES[city.slug] ?? [])
@@ -178,8 +138,6 @@ export default async function HomePage() {
       dishCount: ranking.length,
       watermarkDishes,
       ranking,
-      justTasted: justTasted.slice(0, 3),
-      whatsNew: whatsNew.slice(0, 2),
     }
   })
 

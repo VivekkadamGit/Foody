@@ -86,9 +86,7 @@ export default function Footer({ cities }: { cities?: City[] }) {
           <div className="flex flex-col gap-3">
             {[
               ...(process.env.NEXT_PUBLIC_ENABLE_AI_SUGGEST === 'true' ? [{ label: 'AI Food Suggest', href: '/suggest' }] : []),
-              { label: 'Must Try Dishes', href: '/' },
-              { label: "What's New", href: '/' },
-              { label: 'Watch', href: '/' },
+              { label: 'Must Try Dishes', href: '/#must-try' },
               { label: 'About Us', href: '#' },
             ].map(({ label, href }) => (
               <Link key={label} href={href}
