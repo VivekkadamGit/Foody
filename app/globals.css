@@ -26,3 +26,10 @@
   0%, 100% { transform: scale(1); }
   50%       { transform: scale(1.12); }
 }
+
+@keyframes gwFloat {
+  0%   { opacity: 0; transform: translateY(14px) scale(.985); }
+  18%  { opacity: var(--peak); }
+  70%  { opacity: var(--peak); }
+  100% { opacity: 0; transform: translateY(-16px) scale(1.015); }
+}
