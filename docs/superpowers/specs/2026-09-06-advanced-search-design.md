@@ -24,7 +24,7 @@ Rejected moving to NoSQL.
 - Volume is ~64 dishes. This is not a scale problem.
 - If Postgres FTS is outgrown, the answer is a dedicated search index (Meilisearch/Typesense), still not NoSQL.
 
-## Schema — migration `003_canonical_dishes.sql`
+## Schema — migration `004_canonical_dishes.sql`
 
 The blocker: `dishes` rows are per-restaurant. "Pani Puri" at ten restaurants is ten unrelated rows joined only by free text. Dish-intent search needs one canonical dish that many restaurants point at.
 
@@ -122,7 +122,7 @@ Grouped sections — DISHES, FLAVORS, RESTAURANTS — replacing the current in-m
 
 | File | Purpose |
 |---|---|
-| `supabase/migrations/003_canonical_dishes.sql` | Schema, constraint, indexes, seed, backfill |
+| `supabase/migrations/004_canonical_dishes.sql` | Schema, constraint, indexes, seed, backfill |
 | `lib/flavors.ts` | The 8-item vocabulary and label helpers |
 | `lib/search.ts` | Query builders and result types, shared by API route and pages |
 | `app/api/search/route.ts` | The search endpoint |
@@ -138,20 +138,30 @@ Grouped sections — DISHES, FLAVORS, RESTAURANTS — replacing the current in-m
 - Search API failure → dropdown shows an inline "search unavailable" line; the page never crashes.
 - All queries filter `deleted_at IS NULL`, per project convention.
 
+## Status update — 2026-09-06, database now reachable
+
+Connecting to the live database changed the picture and **deferred this spec**:
+
+- **Production was serving invented data.** The homepage queried `cities.status`, which did not exist; PostgREST returned 400, the error was swallowed, and the page fell through to `FALLBACK_BUNDLES`. Fixed: migration 002 applied, sample data is now development-only and banner-marked, query errors are logged.
+- **The live database is nearly empty**: 1 restaurant, 1 dish, 0 reviews, 4 cities. Search built now could not be meaningfully verified, since every score derives from reviews.
+- **Reviews could not accumulate.** `UNIQUE (dish_id, tester_id)` plus an upsert meant a revisit overwrote the earlier review, destroying history, and capped `review_count` at 1 — making the Certified and Rated tiers unreachable. Fixed by migration `003_review_per_visit.sql`; the admin review page now inserts per visit.
+
+**Decision: get real content in first, then build search.** This spec stands as written; only the migration number changed (canonical dishes is now 004).
+
 ## Verification and known gap
 
 Verified here: type-check, clean production build, and browser verification of the dropdown, dish page, and flavor page.
-
-**Not verified here:** the Supabase project is unreachable from this sandbox (DNS does not resolve for the REST host; the session pooler returns "tenant not found" for the project ref). The migration and all real-data queries are therefore unrun. To keep the UI verifiable, `/api/search` falls back to a small static dataset when the database is unreachable — mirroring the existing `FALLBACK_BUNDLES` pattern in `app/page.tsx`.
 
 There is no test runner in this repo, so verification is build + browser, consistent with prior work on this project. `lib/search.ts` and `lib/flavors.ts` are pure and can take unit tests if a runner is added later.
 
 ## Owner actions
 
-1. Confirm Supabase connectivity from a machine that can reach the project.
-2. Run migration `002_city_status.sql` — still outstanding from the previous branch.
-3. Run migration `003_canonical_dishes.sql`.
-4. Reload the Directus data model and link any dishes the backfill missed.
+1. ~~Confirm Supabase connectivity~~ — done, 2026-09-06.
+2. ~~Run migration `002_city_status.sql`~~ — applied 2026-09-06.
+3. ~~Run migration `003_review_per_visit.sql`~~ — applied 2026-09-06.
+4. Enter real restaurants, dishes and reviews before search is built.
+5. Run migration `004_canonical_dishes.sql` when search work begins.
+6. Reload the Directus data model and link any dishes the backfill missed.
 
 ## Out of scope
 

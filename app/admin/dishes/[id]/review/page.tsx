@@ -31,15 +31,25 @@ export default function AddReviewPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Not logged in'); setLoading(false); return }
 
-    const { error } = await supabase.from('reviews').upsert({
+    // Insert, not upsert: each review is one visit. Re-tasting a dish must add to the
+    // history, never replace it — that's what makes "tasted 4×" mean anything.
+    const { error } = await supabase.from('reviews').insert({
       dish_id: dishId,
       tester_id: user.id,
       rating: form.rating,
       taste_notes: form.taste_notes || null,
       visit_date: form.visit_date,
-    }, { onConflict: 'dish_id,tester_id' })
+    })
 
-    if (error) { setError(error.message); setLoading(false); return }
+    if (error) {
+      setError(
+        error.code === '23505'
+          ? 'You already logged this dish for that date. Pick a different visit date, or edit the existing review.'
+          : error.message
+      )
+      setLoading(false)
+      return
+    }
 
     const citySlug = dish?.restaurants?.cities?.slug
     const restaurantId = dish?.restaurants?.id
