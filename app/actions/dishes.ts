@@ -7,11 +7,19 @@ export async function updateDish(id: string, restaurantId: string, data: {
   name: string
   description: string
   is_must_try: boolean
+  /** 0–10, one decimal. null means "not scored yet" — the dish stays out of rankings. */
+  score: number | null
 }) {
+  if (data.score !== null && (Number.isNaN(data.score) || data.score < 0 || data.score > 10)) {
+    throw new Error('Score must be between 0 and 10')
+  }
+
   const supabase = await createClient()
   const { error } = await supabase.from('dishes').update(data).eq('id', id)
   if (error) throw new Error(error.message)
+
   revalidatePath(`/admin/restaurants/${restaurantId}`)
+  revalidatePath('/')
 }
 
 export async function softDeleteDish(id: string, restaurantId: string) {

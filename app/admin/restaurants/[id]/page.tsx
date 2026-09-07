@@ -92,7 +92,11 @@ export default async function ManageRestaurantPage({ params }: { params: Promise
                           <span className="text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded-full">deleted</span>
                         )}
                       </div>
-                      {avg && <span className="text-amber-500 text-sm">★ {avg}</span>}
+                      {dish.score !== null && dish.score !== undefined ? (
+                        <span className="text-amber-600 text-sm font-bold">{Number(dish.score).toFixed(1)}</span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">not scored</span>
+                      )}
                     </div>
 
                     {dish.description && (
@@ -104,6 +108,7 @@ export default async function ManageRestaurantPage({ params }: { params: Promise
                       name: dish.name,
                       description: dish.description,
                       is_must_try: dish.is_must_try,
+                      score: dish.score === null || dish.score === undefined ? null : Number(dish.score),
                       deleted_at: dish.deleted_at,
                       restaurantId: restaurant.id,
                     }} />

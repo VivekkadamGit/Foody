@@ -1,7 +1,7 @@
 import Footer from '@/components/ui/Footer'
 import HomeClient, { CityBundle } from '@/components/home/HomeClient'
 import { createClient } from '@/lib/supabase/server'
-import { avgRating, scoreOutOf10, priceTierSymbol } from '@/lib/dishScore'
+import { priceTierSymbol } from '@/lib/dishScore'
 import type { RankedDish } from '@/components/home/MustTryRanking'
 
 const FALLBACK_WATERMARK_DISHES: Record<string, string[]> = {
@@ -35,9 +35,9 @@ const FALLBACK_BUNDLES: CityBundle[] = [
     dishCount: 14,
     watermarkDishes: FALLBACK_WATERMARK_DISHES.surat,
     ranking: [
-      { id: 'fallback-s1', name: 'Locho', restaurantName: 'Maskati Locho House', restaurantArea: 'Maskati Market', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 8.8, reviewCount: 4, isMustTry: true },
-      { id: 'fallback-s2', name: 'Ghari', restaurantName: 'Rasoi', restaurantArea: 'Athwalines', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Sweets'], score: 8.6, reviewCount: 3, isMustTry: false },
-      { id: 'fallback-s3', name: 'Ponk Vada', restaurantName: 'Gandhi Bhog', restaurantArea: 'Varachha', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 8.2, reviewCount: 1, isMustTry: false },
+      { id: 'fallback-s1', name: 'Locho', restaurantName: 'Maskati Locho House', restaurantArea: 'Maskati Market', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 8.8, isMustTry: true },
+      { id: 'fallback-s2', name: 'Ghari', restaurantName: 'Rasoi', restaurantArea: 'Athwalines', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Sweets'], score: 8.6, isMustTry: false },
+      { id: 'fallback-s3', name: 'Ponk Vada', restaurantName: 'Gandhi Bhog', restaurantArea: 'Varachha', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 8.2, isMustTry: false },
     ],
   },
   {
@@ -45,12 +45,12 @@ const FALLBACK_BUNDLES: CityBundle[] = [
     dishCount: 64,
     watermarkDishes: FALLBACK_WATERMARK_DISHES.ahmedabad,
     ranking: [
-      { id: 'fallback-1', name: 'Fafda jalebi', restaurantName: 'Chandravilas', restaurantArea: 'Gandhi Road', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Street Food'], score: 9.2, reviewCount: 6, isMustTry: true },
-      { id: 'fallback-2', name: 'Dhokla', restaurantName: 'Das Khaman', restaurantArea: 'Naranpura', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Gujarati'], score: 8.9, reviewCount: 4, isMustTry: true },
-      { id: 'fallback-3', name: 'Dal vada', restaurantName: 'Ratanpole corner cart', restaurantArea: null, priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 9.0, reviewCount: 3, isMustTry: false },
-      { id: 'fallback-4', name: 'Undhiyu', restaurantName: 'Gordhan Thal', restaurantArea: 'Sindhu Bhavan Rd', priceRange: 3, priceSymbol: '₹₹₹', cuisineTypes: ['Gujarati'], score: 8.7, reviewCount: 2, isMustTry: false },
-      { id: 'fallback-5', name: 'Khandvi', restaurantName: 'Gopi Dining Hall', restaurantArea: 'Ellisbridge', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Gujarati'], score: 8.5, reviewCount: 1, isMustTry: false },
-      { id: 'fallback-6', name: 'Khaman dhokla', restaurantName: 'Jai Bhavani', restaurantArea: 'Paldi', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Gujarati'], score: 8.4, reviewCount: 1, isMustTry: false },
+      { id: 'fallback-1', name: 'Fafda jalebi', restaurantName: 'Chandravilas', restaurantArea: 'Gandhi Road', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Street Food'], score: 9.2, isMustTry: true },
+      { id: 'fallback-2', name: 'Dhokla', restaurantName: 'Das Khaman', restaurantArea: 'Naranpura', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Gujarati'], score: 8.9, isMustTry: true },
+      { id: 'fallback-3', name: 'Dal vada', restaurantName: 'Ratanpole corner cart', restaurantArea: null, priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Street Food'], score: 9.0, isMustTry: false },
+      { id: 'fallback-4', name: 'Undhiyu', restaurantName: 'Gordhan Thal', restaurantArea: 'Sindhu Bhavan Rd', priceRange: 3, priceSymbol: '₹₹₹', cuisineTypes: ['Gujarati'], score: 8.7, isMustTry: false },
+      { id: 'fallback-5', name: 'Khandvi', restaurantName: 'Gopi Dining Hall', restaurantArea: 'Ellisbridge', priceRange: 2, priceSymbol: '₹₹', cuisineTypes: ['Gujarati'], score: 8.5, isMustTry: false },
+      { id: 'fallback-6', name: 'Khaman dhokla', restaurantName: 'Jai Bhavani', restaurantArea: 'Paldi', priceRange: 1, priceSymbol: '₹', cuisineTypes: ['Gujarati'], score: 8.4, isMustTry: false },
     ],
   },
   {
@@ -72,7 +72,7 @@ export default async function HomePage() {
       .from('restaurants')
       .select(
         `id, name, address, price_range, cuisine_type, cities!inner(name, slug, status),
-         dishes(id, name, is_must_try, reviews(rating))`
+         dishes(id, name, is_must_try, score)`
       )
       .is('deleted_at', null),
   ])
@@ -132,10 +132,8 @@ export default async function HomePage() {
       const cuisineTypes: string[] = r.cuisine_type ?? []
 
       for (const d of r.dishes ?? []) {
-        const reviews = d.reviews ?? []
-        if (reviews.length === 0) continue
-        const ratings = reviews.map((rv: any) => rv.rating)
-        const score = scoreOutOf10(avgRating(ratings))
+        // A dish earns its place in the ranking by being scored, not by visit count.
+        if (d.score === null || d.score === undefined) continue
 
         ranking.push({
           id: d.id,
@@ -145,14 +143,15 @@ export default async function HomePage() {
           priceRange: r.price_range ?? 1,
           priceSymbol,
           cuisineTypes,
-          score,
-          reviewCount: reviews.length,
+          score: Number(d.score),
           isMustTry: !!d.is_must_try,
         })
       }
     }
 
-    ranking.sort((a, b) => (b.isMustTry ? 1 : 0) - (a.isMustTry ? 1 : 0) || b.score - a.score)
+    ranking.sort(
+      (a, b) => (b.isMustTry ? 1 : 0) - (a.isMustTry ? 1 : 0) || (b.score ?? 0) - (a.score ?? 0)
+    )
 
     const dbWatermarks = ranking.map((d) => d.name)
     const watermarkDishes = dbWatermarks.length > 0 ? dbWatermarks : (FALLBACK_WATERMARK_DISHES[city.slug] ?? [])

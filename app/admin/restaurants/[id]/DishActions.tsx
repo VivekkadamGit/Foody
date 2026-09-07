@@ -8,6 +8,7 @@ type Dish = {
   name: string
   description: string | null
   is_must_try: boolean
+  score: number | null
   deleted_at: string | null
   restaurantId: string
 }
@@ -18,6 +19,7 @@ export default function DishActions({ dish }: { dish: Dish }) {
     name: dish.name,
     description: dish.description ?? '',
     is_must_try: dish.is_must_try,
+    score: dish.score === null ? '' : String(dish.score),
   })
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -26,7 +28,13 @@ export default function DishActions({ dish }: { dish: Dish }) {
     setError('')
     startTransition(async () => {
       try {
-        await updateDish(dish.id, dish.restaurantId, form)
+        const trimmed = form.score.trim()
+        await updateDish(dish.id, dish.restaurantId, {
+          name: form.name,
+          description: form.description,
+          is_must_try: form.is_must_try,
+          score: trimmed === '' ? null : Number(trimmed),
+        })
         setEditing(false)
       } catch (e: any) {
         setError(e.message)
@@ -101,6 +109,23 @@ export default function DishActions({ dish }: { dish: Dish }) {
               rows={2}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
             />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Score (0&ndash;10)</label>
+            <input
+              type="number"
+              min={0}
+              max={10}
+              step={0.1}
+              inputMode="decimal"
+              value={form.score}
+              onChange={e => setForm(f => ({ ...f, score: e.target.value }))}
+              placeholder="Leave blank if not tasted yet"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+            <p className="text-[11px] text-gray-500 mt-1">
+              Your score for this dish. Blank keeps it out of rankings.
+            </p>
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input

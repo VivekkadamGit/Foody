@@ -14,7 +14,6 @@ export type RankedDish = {
   priceSymbol: string
   cuisineTypes: string[]
   score: number
-  reviewCount: number
   isMustTry: boolean
 }
 
@@ -153,7 +152,7 @@ export default function MustTryRanking({
     (d) =>
       (!cuisine || d.cuisineTypes.includes(cuisine)) &&
       (!price || d.priceRange === price) &&
-      (qualityFilter.size === 0 || qualityFilter.has(qualityTier(d.score, d.reviewCount)))
+      (qualityFilter.size === 0 || qualityFilter.has(qualityTier(d.score, d.isMustTry)))
   )
   const visible = filtered.slice(0, visibleCount)
   const hasFilters = cuisine !== null || price !== null || qualityFilter.size > 0
@@ -210,7 +209,7 @@ export default function MustTryRanking({
                 </p>
               </div>
               <div className="justify-self-start sm:justify-self-center">
-                <QualityBadge score={dish.score} reviewCount={dish.reviewCount} />
+                <QualityBadge score={dish.score} isMustTry={dish.isMustTry} />
               </div>
               <div className="font-barlow text-[27px] leading-none font-bold text-[#fdf9f4] text-right">
                 {dish.score.toFixed(1)}

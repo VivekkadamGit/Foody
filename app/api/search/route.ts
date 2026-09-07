@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { avgRating, scoreOutOf10, priceTierSymbol } from '@/lib/dishScore'
+import { priceTierSymbol } from '@/lib/dishScore'
 
 export type DishHit = {
   kind: 'dish'
@@ -10,9 +10,9 @@ export type DishHit = {
   restaurantName: string
   area: string | null
   priceSymbol: string
-  /** null when the dish has no reviews yet — shown as "Not rated yet" rather than hidden. */
+  /** null until it has been scored — shown as "Not rated yet" rather than hidden. */
   score: number | null
-  reviewCount: number
+  isMustTry: boolean
 }
 
 export type RestaurantHit = {
@@ -54,14 +54,12 @@ export async function GET(request: Request) {
     supabase
       .from('dishes')
       .select(
-        `id, name,
-         restaurants!inner(id, name, address, price_range, cities!inner(slug)),
-         reviews(rating)`
+        `id, name, score, is_must_try,
+         restaurants!inner(id, name, address, price_range, cities!inner(slug))`
       )
       .ilike('name', pattern)
       .eq('restaurants.cities.slug', city)
       .is('deleted_at', null)
-      .is('reviews.deleted_at', null)
       .limit(6),
     supabase
       .from('restaurants')
@@ -81,20 +79,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'search_failed' }, { status: 500 })
   }
 
-  const dishes: DishHit[] = (dishesRes.data ?? []).map((d: any) => {
-    const ratings = (d.reviews ?? []).map((r: any) => r.rating)
-    return {
-      kind: 'dish',
-      id: d.id,
-      name: d.name,
-      restaurantId: d.restaurants.id,
-      restaurantName: d.restaurants.name,
-      area: areaOf(d.restaurants.address),
-      priceSymbol: priceTierSymbol(d.restaurants.price_range),
-      score: ratings.length > 0 ? scoreOutOf10(avgRating(ratings)) : null,
-      reviewCount: ratings.length,
-    }
-  })
+  const dishes: DishHit[] = (dishesRes.data ?? []).map((d: any) => ({
+    kind: 'dish',
+    id: d.id,
+    name: d.name,
+    restaurantId: d.restaurants.id,
+    restaurantName: d.restaurants.name,
+    area: areaOf(d.restaurants.address),
+    priceSymbol: priceTierSymbol(d.restaurants.price_range),
+    score: d.score === null || d.score === undefined ? null : Number(d.score),
+    isMustTry: !!d.is_must_try,
+  }))
 
   const restaurants: RestaurantHit[] = (restaurantsRes.data ?? []).map((r: any) => ({
     kind: 'restaurant',

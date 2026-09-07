@@ -333,7 +333,7 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
                             <span className="font-anek text-[11px] text-[#a09a90] whitespace-nowrap">Not rated yet</span>
                           ) : (
                             <>
-                              <QualityBadge score={d.score} reviewCount={d.reviewCount} size="sm" dark={false} />
+                              <QualityBadge score={d.score} isMustTry={d.isMustTry} size="sm" dark={false} />
                               <span className="font-barlow text-2xl font-bold text-[#1c1611]">{d.score.toFixed(1)}</span>
                             </>
                           )}
