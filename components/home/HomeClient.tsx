@@ -6,6 +6,7 @@ import Link from 'next/link'
 import MustTryRanking, { RankedDish } from './MustTryRanking'
 import QualityBadge from './QualityBadge'
 import CitiesGrid from './CitiesGrid'
+import type { SearchResults } from '@/app/api/search/route'
 
 export type CityBundle = {
   city: { name: string; slug: string }
@@ -33,6 +34,9 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
   const [activeSlug, setActiveSlug] = useState(bundles[0]?.city.slug ?? '')
   const [query, setQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
+  const [results, setResults] = useState<SearchResults>({ dishes: [], restaurants: [] })
+  const [searching, setSearching] = useState(false)
+  const [searchFailed, setSearchFailed] = useState(false)
   const [words, setWords] = useState<FloatingWord[]>([])
   const wordId = useRef(0)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -150,11 +154,46 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Debounced, abortable search against the database. Replaces the old in-memory filter,
+  // which could only ever see dishes that already had reviews.
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2 || !activeSlug) {
+      setResults({ dishes: [], restaurants: [] })
+      setSearching(false)
+      setSearchFailed(false)
+      return
+    }
+
+    setSearching(true)
+    const controller = new AbortController()
+    const handle = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/search?q=${encodeURIComponent(q)}&city=${encodeURIComponent(activeSlug)}`,
+          { signal: controller.signal }
+        )
+        if (!res.ok) throw new Error(`search failed: ${res.status}`)
+        setResults(await res.json())
+        setSearchFailed(false)
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
+        setSearchFailed(true)
+        setResults({ dishes: [], restaurants: [] })
+      } finally {
+        setSearching(false)
+      }
+    }, 180)
+
+    return () => {
+      clearTimeout(handle)
+      controller.abort()
+    }
+  }, [query, activeSlug])
+
   if (!active) return null
 
-  const matches = query.trim()
-    ? active.ranking.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 5)
-    : []
+  const hasResults = results.dishes.length > 0 || results.restaurants.length > 0
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -249,30 +288,83 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
               </button>
             </div>
 
-            {matches.length > 0 && (
-              <div className="bg-white border-t border-[#ede8e1]">
-                {matches.map((d, i) => (
-                  <Link
-                    key={d.id}
-                    href={`/${active.city.slug}?q=${encodeURIComponent(d.name)}`}
-                    className={`flex items-center gap-3.5 px-5 py-3 ${i % 2 === 1 ? 'bg-[#fdf6f2]' : ''} ${i > 0 ? 'border-t border-[#f2ede6]' : ''}`}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-md flex-shrink-0"
-                      style={{ background: 'repeating-linear-gradient(135deg,#ece7dd 0 7px,#e2dcd1 7px 14px)' }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-anek text-[15px] font-semibold text-[#1c1611] truncate m-0">{d.name}</p>
-                      <p className="font-anek text-[12.5px] text-sand-dark truncate m-0">
-                        Best at {d.restaurantName} · {d.priceSymbol}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2.5 flex-shrink-0">
-                      <QualityBadge score={d.score} reviewCount={d.reviewCount} size="sm" dark={false} />
-                      <span className="font-barlow text-2xl font-bold text-[#1c1611]">{d.score.toFixed(1)}</span>
-                    </div>
-                  </Link>
-                ))}
+            {query.trim().length >= 2 && (
+              <div className="bg-white border-t border-[#ede8e1] max-h-[340px] overflow-y-auto">
+                {searchFailed && (
+                  <p className="px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0">
+                    Search is unavailable right now.
+                  </p>
+                )}
+
+                {!searchFailed && searching && !hasResults && (
+                  <p className="px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0">Searching…</p>
+                )}
+
+                {!searchFailed && !searching && !hasResults && (
+                  <p className="px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0">
+                    Nothing matches &ldquo;{query.trim()}&rdquo; in {active.city.name}.
+                  </p>
+                )}
+
+                {results.dishes.length > 0 && (
+                  <>
+                    <p className="px-5 pt-3 pb-1 font-anek text-[10px] font-bold uppercase tracking-[0.15em] text-[#a09a90] m-0">
+                      Dishes
+                    </p>
+                    {results.dishes.map((d) => (
+                      <Link
+                        key={d.id}
+                        href={`/${active.city.slug}/${d.restaurantId}`}
+                        className="flex items-center gap-3.5 px-5 py-3 border-t border-[#f2ede6] hover:bg-[#fdf6f2] transition-colors"
+                      >
+                        <div
+                          className="w-10 h-10 rounded-md flex-shrink-0"
+                          style={{ background: 'repeating-linear-gradient(135deg,#ece7dd 0 7px,#e2dcd1 7px 14px)' }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-anek text-[15px] font-semibold text-[#1c1611] truncate m-0">{d.name}</p>
+                          <p className="font-anek text-[12.5px] text-sand-dark truncate m-0">
+                            {d.restaurantName}
+                            {d.area ? `, ${d.area}` : ''} · {d.priceSymbol}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2.5 flex-shrink-0">
+                          {d.score === null ? (
+                            <span className="font-anek text-[11px] text-[#a09a90] whitespace-nowrap">Not rated yet</span>
+                          ) : (
+                            <>
+                              <QualityBadge score={d.score} reviewCount={d.reviewCount} size="sm" dark={false} />
+                              <span className="font-barlow text-2xl font-bold text-[#1c1611]">{d.score.toFixed(1)}</span>
+                            </>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
+
+                {results.restaurants.length > 0 && (
+                  <>
+                    <p className="px-5 pt-3 pb-1 font-anek text-[10px] font-bold uppercase tracking-[0.15em] text-[#a09a90] m-0 border-t border-[#ede8e1]">
+                      Restaurants
+                    </p>
+                    {results.restaurants.map((r) => (
+                      <Link
+                        key={r.id}
+                        href={`/${active.city.slug}/${r.id}`}
+                        className="flex items-center gap-3.5 px-5 py-3 border-t border-[#f2ede6] hover:bg-[#fdf6f2] transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-anek text-[15px] font-semibold text-[#1c1611] truncate m-0">{r.name}</p>
+                          <p className="font-anek text-[12.5px] text-sand-dark truncate m-0">
+                            {r.area ? `${r.area} · ` : ''}
+                            {r.dishCount} {r.dishCount === 1 ? 'dish' : 'dishes'} · {r.priceSymbol}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
               </div>
             )}
 
