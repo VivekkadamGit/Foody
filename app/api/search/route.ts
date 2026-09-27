@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { priceTierSymbol } from '@/lib/dishScore'
+import { parseQuery, isPlainTextQuery } from '@/lib/taxonomy'
 
 export type DishHit = {
   kind: 'dish'
@@ -13,6 +14,8 @@ export type DishHit = {
   /** null until it has been scored — shown as "Not rated yet" rather than hidden. */
   score: number | null
   isMustTry: boolean
+  /** Whether this came back on its name or on its tags — drives the dropdown hint. */
+  matchedOn: 'name' | 'taxonomy'
 }
 
 export type RestaurantHit = {
@@ -50,17 +53,37 @@ export async function GET(request: Request) {
   const supabase = await createClient()
   const pattern = `%${escapeLike(q)}%`
 
+  // "best cake" carries taxonomy meaning ("cake" -> the `baked` category), not just
+  // letters to match. Pull that out first so a brownie can answer a query for cake.
+  const parsed = parseQuery(q)
+  const plainText = isPlainTextQuery(parsed)
+
+  let dishQuery = supabase
+    .from('dishes')
+    .select(
+      `id, name, score, is_must_try, diet, category, cuisine, tastes, meals,
+       restaurants!inner(id, name, address, price_range, cities!inner(slug))`
+    )
+    .eq('restaurants.cities.slug', city)
+    .is('deleted_at', null)
+    .limit(12)
+
+  if (plainText) {
+    // Nothing recognisable — fall back to matching the name.
+    dishQuery = dishQuery.ilike('name', pattern)
+  } else {
+    // Every taxonomy dimension present must hold (AND), so "spicy veg curry" narrows.
+    if (parsed.categories.length) dishQuery = dishQuery.in('category', parsed.categories)
+    if (parsed.diets.length) dishQuery = dishQuery.in('diet', parsed.diets)
+    if (parsed.cuisines.length) dishQuery = dishQuery.in('cuisine', parsed.cuisines)
+    if (parsed.tastes.length) dishQuery = dishQuery.overlaps('tastes', parsed.tastes)
+    if (parsed.meals.length) dishQuery = dishQuery.overlaps('meals', parsed.meals)
+    // Leftover words still have to appear in the name: "nutella brownie" -> baked + "nutella".
+    if (parsed.text) dishQuery = dishQuery.ilike('name', `%${escapeLike(parsed.text)}%`)
+  }
+
   const [dishesRes, restaurantsRes] = await Promise.all([
-    supabase
-      .from('dishes')
-      .select(
-        `id, name, score, is_must_try,
-         restaurants!inner(id, name, address, price_range, cities!inner(slug))`
-      )
-      .ilike('name', pattern)
-      .eq('restaurants.cities.slug', city)
-      .is('deleted_at', null)
-      .limit(6),
+    dishQuery,
     supabase
       .from('restaurants')
       .select('id, name, address, price_range, cities!inner(slug), dishes(id)')
@@ -81,6 +104,7 @@ export async function GET(request: Request) {
 
   const dishes: DishHit[] = (dishesRes.data ?? []).map((d: any) => ({
     kind: 'dish',
+    matchedOn: plainText ? ('name' as const) : ('taxonomy' as const),
     id: d.id,
     name: d.name,
     restaurantId: d.restaurants.id,
