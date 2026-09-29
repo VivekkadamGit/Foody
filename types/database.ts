@@ -62,8 +62,6 @@ export const PRICE_LABELS: PriceLabel = {
   3: '₹₹₹ Premium',
 }
 
-// An entry in "Trending Right Now" — food the city is talking about that we have NOT
-// tasted. There is deliberately no score field: see migration 006.
 export type TrendingDish = {
   id: string
   dish_name: string
@@ -76,6 +74,13 @@ export type TrendingDish = {
   photo_url: string | null
   visited_dish_id: string | null
   rank: number
+  /** Hand-set 1–3, rendered as 🔥. Orders "On our list". */
+  buzz: number
+  diet: string | null
+  category: string | null
+  cuisine: string | null
+  tastes: string[]
+  meals: string[]
   created_at: string
   deleted_at: string | null
 }
