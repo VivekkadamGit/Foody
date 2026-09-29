@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { parseQuery } from '@/lib/taxonomy'
+import { parseQuery, stripFiller } from '@/lib/taxonomy'
 import { classifyQuery } from './classify'
 import { applyChips } from './present'
 import { fetchBoard, fetchFuzzy, fetchMeal, fetchOnOurList, fetchSpecific } from './fetch'
@@ -20,8 +20,11 @@ export async function runSearch(
   city: string,
   chips: ChipParams = {}
 ): Promise<SearchResponse> {
+  q = q.slice(0, 100)
   const filters = applyChips(parseQuery(q), chips)
   const kind = classifyQuery(filters)
+  // Chip-derived dimensions only: typed categories/cuisines would defeat "cake" -> "Cake Walk".
+  const chipFilter = { diets: filters.diets, tastes: filters.tastes, meals: filters.meals }
 
   if (kind === 'broad') {
     const [board, onOurList] = await Promise.all([fetchBoard(sb, city), fetchOnOurList(sb, city, null)])
@@ -35,7 +38,7 @@ export async function runSearch(
   }
 
   if (kind === 'text') {
-    const fuzzy = await fetchFuzzy(sb, city, filters.text || q)
+    const fuzzy = await fetchFuzzy(sb, city, filters.text || q, chipFilter)
     const base = { kind, filters, ranked: fuzzy.dishes, onOurList: fuzzy.trending, restaurants: fuzzy.restaurants }
     if (fuzzy.dishes.length > 0) return base
     return { ...base, empty: true, board: await fetchBoard(sb, city) }
@@ -49,7 +52,12 @@ export async function runSearch(
   if (ranked.length > 0) return { kind, filters, ranked, onOurList, restaurants: [] }
 
   // Tags matched nothing rated — maybe the words are in a name ("cake" in "Cake Walk").
-  const fuzzy = await fetchFuzzy(sb, city, q)
+  // Filler words ("best", "in town") would only dilute the name match; chip filters still apply.
+  const stripped = stripFiller(q)
+  if (!stripped) {
+    return { kind, filters, ranked: [], onOurList, restaurants: [], empty: true, board: await fetchBoard(sb, city) }
+  }
+  const fuzzy = await fetchFuzzy(sb, city, stripped, chipFilter)
   const list = onOurList.length > 0 ? onOurList : fuzzy.trending
   if (fuzzy.dishes.length > 0) {
     return { kind: 'text', filters, ranked: fuzzy.dishes, onOurList: list, restaurants: fuzzy.restaurants }

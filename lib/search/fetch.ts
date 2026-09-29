@@ -92,7 +92,9 @@ export async function fetchSpecific(sb: SupabaseClient, city: string, f: ParsedQ
 
 /** meal: dishes tagged with the meal, grouped Thali / by cuisine. */
 export async function fetchMeal(sb: SupabaseClient, city: string, f: ParsedQuery): Promise<DishGroup[]> {
-  const { data, error } = await withFilters(dishesInCity(sb, city), f, 'name').limit(300)
+  const { data, error } = await withFilters(dishesInCity(sb, city), f, 'name')
+    .order('score', { ascending: false, nullsFirst: false })
+    .limit(300)
   if (error) fail('meal query', error.message)
   return groupForMeal((data ?? []).map((d: any) => toDishHit(d, 'taxonomy')))
 }
@@ -102,16 +104,21 @@ export async function fetchBoard(sb: SupabaseClient, city: string): Promise<Boar
   const { data, error } = await dishesInCity(sb, city)
     .not('score', 'is', null)
     .not('category', 'is', null)
+    .order('score', { ascending: false, nullsFirst: false })
     .limit(1000)
   if (error) fail('board query', error.message)
   return pickBoard((data ?? []).map((d: any) => toDishHit(d, 'taxonomy')))
 }
 
+/** Chip-derived dimensions only. Categories/cuisines are deliberately excluded from the fallback. */
+export type FuzzyFilter = Partial<Pick<ParsedQuery, 'diets' | 'tastes' | 'meals'>>
+
 /** text: typo-tolerant name match across dishes, restaurants and viral entries. */
 export async function fetchFuzzy(
   sb: SupabaseClient,
   city: string,
-  text: string
+  text: string,
+  filter: FuzzyFilter = {}
 ): Promise<{ dishes: DishHit[]; restaurants: RestaurantHit[]; trending: TrendingHit[] }> {
   const { data: hits, error } = await sb.rpc('search_fuzzy', { q: text, city_slug: city })
   if (error) fail('fuzzy search', error.message)
@@ -126,14 +133,24 @@ export async function fetchFuzzy(
   const restaurantIds = idsOf('restaurant')
   const trendingIds = idsOf('trending')
 
+  const f: ParsedQuery = { text: '', categories: [], cuisines: [], diets: [], tastes: [], meals: [], ...filter }
   const none = Promise.resolve({ data: [] as any[], error: null })
   const [dishRes, restRes, trendRes] = await Promise.all([
-    dishIds.length ? sb.from('dishes').select(DISH_SELECT).in('id', dishIds) : none,
+    dishIds.length
+      ? withFilters(sb.from('dishes').select(DISH_SELECT).in('id', dishIds).is('deleted_at', null), f, 'name')
+      : none,
     restaurantIds.length
       ? sb.from('restaurants').select('id, name, address, price_range, dishes(id)')
           .in('id', restaurantIds).is('dishes.deleted_at', null)
       : none,
-    trendingIds.length ? sb.from('trending_dishes').select(TRENDING_SELECT).in('id', trendingIds) : none,
+    trendingIds.length
+      ? withFilters(
+          sb.from('trending_dishes').select(TRENDING_SELECT).in('id', trendingIds)
+            .is('deleted_at', null).is('visited_dish_id', null),
+          f,
+          'dish_name'
+        )
+      : none,
   ])
   if (dishRes.error) fail('fuzzy dishes', dishRes.error.message)
   if (restRes.error) fail('fuzzy restaurants', restRes.error.message)

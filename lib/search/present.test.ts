@@ -86,5 +86,6 @@ describe('previewDishes / summaryLine', () => {
     const trend = { id: 't', dishName: 'd', placeName: 'p', area: null, why: 'w', sourceUrl: null, photoUrl: null, restaurantId: null, buzz: 2 }
     expect(summaryLine(response({ ranked: [dish('a'), dish('b')], onOurList: [trend] }))).toBe('2 dishes · 1 on our list')
     expect(summaryLine(response({ ranked: [dish('a')] }))).toBe('1 dish')
+    expect(summaryLine(response({ ranked: [], onOurList: [trend] }))).toBe('1 on our list')
   })
 })

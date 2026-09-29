@@ -37,7 +37,7 @@ Two independent services sharing one Supabase Postgres database:
 
 **AI Suggest** — `app/api/suggest/route.ts` fetches all reviewed dishes from Supabase, builds a context string, and calls Gemini 1.5 Flash to return a single best-match dish recommendation.
 
-**Search** — `lib/search/`. `parseQuery` (`lib/taxonomy.ts`) extracts tags; `classifyQuery` picks a kind: `specific` (ranked by `dishes.score`), `meal` (grouped Thali / by cuisine), `broad` (City's Best: top dish per category), `text` (typo-tolerant via the `search_fuzzy` SQL function, migration 008). `runSearch` is the single entry point, used by `/api/search` (hero dropdown) and the `/search` page. Viral entries from `trending_dishes` show separately as "On our list · visiting soon" (ordered by `buzz`), never ranked with rated dishes. Pure logic is unit tested: `npm test`. Design: `docs/superpowers/specs/2026-09-30-smart-search-design.md`.
+**Search** — `lib/search/`. `parseQuery` (`lib/taxonomy.ts`) extracts tags; `classifyQuery` picks a kind: `specific` (ranked by `dishes.score`), `meal` (grouped Thali / by cuisine), `broad` (City's Best: top dish per category), `text` (typo-tolerant via the `search_fuzzy` SQL function, migration 008). `runSearch` is the single entry point, used by `/api/search` (hero dropdown) and the `/search` page. Viral entries from `trending_dishes` show separately as "On our list · visiting soon" (ordered by `buzz`), never ranked with rated dishes. Pure logic is unit tested: `npm test`. Design: `docs/superpowers/specs/2026-09-30-smart-search-design.md`. Viral entries only match tag/meal searches once their category/meals/diet tags are set (e.g. in Directus).
 
 ### Supabase Client Pattern
 

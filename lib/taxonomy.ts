@@ -152,6 +152,11 @@ const STOP_WORDS = new Set([
   'eat', 'what', 'where', 'something',
 ])
 
+/** Drops filler words ("best biryani in town" -> "biryani") and collapses whitespace. */
+export function stripFiller(q: string): string {
+  return normalize(q).split(' ').filter((w) => w && !STOP_WORDS.has(w)).join(' ')
+}
+
 export type ParsedQuery = {
   /** Terms left over after taxonomy words were consumed — matched against dish names. */
   text: string

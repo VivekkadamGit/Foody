@@ -92,7 +92,7 @@ ordered `buzz DESC, rank ASC, created_at DESC`, limit 6.
 
 ### 2.3 Fallbacks
 
-1. `specific` with zero dishes → rerun as `text` using the original query.
+1. `specific` with zero dishes → rerun as `text` using the query with filler words removed; chip filters still apply.
 2. Still zero dishes → response has `empty: true` and a `board`, so the page shows
    "Nothing here yet" followed by City's Best.
 3. **RAG slot (future):** unclassifiable / zero-result queries go to AI search instead of

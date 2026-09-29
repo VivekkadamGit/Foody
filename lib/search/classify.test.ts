@@ -18,12 +18,14 @@ describe('classifyQuery', () => {
     ['best biryani in town', 'specific'],
     // a category beats a meal
     ['dinner thali', 'specific'],
+    ['south indian dinner', 'specific'],
     // meal: meal tag, no category/cuisine (diet/taste are just filters)
     ['dinner', 'meal'],
     ['best dinner', 'meal'],
     ['veg dinner', 'meal'],
     ['spicy breakfast', 'meal'],
     ['supper', 'meal'],
+    ['dinner theobroma', 'meal'],
     // broad: nothing left after filler words
     ['best food in town', 'broad'],
     ['best', 'broad'],

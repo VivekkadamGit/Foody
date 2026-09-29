@@ -90,7 +90,9 @@ function countDishes(res: SearchResponse): number {
 
 export function summaryLine(res: SearchResponse): string {
   const n = countDishes(res)
+  const onList = `${res.onOurList.length} on our list`
+  if (n === 0 && res.onOurList.length > 0) return onList
   const parts = [`${n} ${n === 1 ? 'dish' : 'dishes'}`]
-  if (res.onOurList.length > 0) parts.push(`${res.onOurList.length} on our list`)
+  if (res.onOurList.length > 0) parts.push(onList)
   return parts.join(' · ')
 }
