@@ -18,7 +18,7 @@ export default function DishResultCard({
   return (
     <Link
       href={`/${citySlug}/${dish.restaurantId}`}
-      className="flex items-center gap-4 rounded-2xl border border-warm-200 bg-white p-4 hover:border-ember/50 transition-colors"
+      className="flex min-w-0 items-center gap-4 rounded-2xl border border-warm-200 bg-white p-4 hover:border-ember/50 transition-colors"
     >
       {position !== undefined && (
         <span className="font-barlow text-3xl font-bold text-ember w-10 text-center flex-shrink-0">#{position}</span>

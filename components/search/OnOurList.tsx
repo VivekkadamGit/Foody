@@ -9,7 +9,7 @@ export default function OnOurList({ items, citySlug }: { items: TrendingHit[]; c
       <p className="font-anek text-[13px] text-muted mt-1 mb-4">
         Places the city is talking about. We haven&apos;t tasted them yet, so they carry no score.
       </p>
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {items.map((t) => (
           <TrendingCard
             key={t.id}

@@ -65,7 +65,7 @@ function Board({ res, citySlug, cityName }: { res: SearchResponse; citySlug: str
     )
   }
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {res.board.map((b) => (
         <DishResultCard key={b.category} dish={b.dish} citySlug={citySlug} eyebrow={b.label} />
       ))}
@@ -78,7 +78,7 @@ function RestaurantList({ res, citySlug }: { res: SearchResponse; citySlug: stri
   return (
     <>
       <p className="font-anek text-[11px] font-bold uppercase tracking-[0.15em] text-[#a09a90] mt-8 mb-3">Restaurants</p>
-      <ul className="grid gap-2">
+      <ul className="grid grid-cols-1 gap-2">
         {res.restaurants.map((r) => (
           <li key={r.id}>
             <Link href={`/${citySlug}/${r.id}`} className="font-anek text-[15px] font-semibold text-charcoal hover:text-ember">
@@ -107,7 +107,7 @@ function Results({ res, citySlug, cityName }: { res: SearchResponse; citySlug: s
         res.groups?.map((g) => (
           <section key={g.key} className="mb-8">
             <h2 className="font-anek text-xl font-bold text-charcoal mb-3">{g.label}</h2>
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {g.dishes.map((d) => <DishResultCard key={d.id} dish={d} citySlug={citySlug} />)}
             </div>
           </section>
@@ -117,7 +117,7 @@ function Results({ res, citySlug, cityName }: { res: SearchResponse; citySlug: s
         <>
           {/* No rated answer: the places we plan to visit are the answer, so they lead. */}
           {listOnTop && <OnOurList items={res.onOurList} citySlug={citySlug} />}
-          <div className="grid gap-3">
+          <div className="grid grid-cols-1 gap-3">
             {rated.map((d, i) => (
               <DishResultCard key={d.id} dish={d} citySlug={citySlug} position={res.kind === 'specific' ? i + 1 : undefined} />
             ))}
@@ -125,7 +125,7 @@ function Results({ res, citySlug, cityName }: { res: SearchResponse; citySlug: s
           {unrated.length > 0 && (
             <>
               <p className="font-anek text-[11px] font-bold uppercase tracking-[0.15em] text-[#a09a90] mt-8 mb-3">Not rated yet</p>
-              <div className="grid gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 {unrated.map((d) => <DishResultCard key={d.id} dish={d} citySlug={citySlug} />)}
               </div>
             </>
