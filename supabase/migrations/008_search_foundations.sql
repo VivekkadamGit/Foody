@@ -67,13 +67,18 @@ CREATE INDEX IF NOT EXISTS idx_dishes_category_score
 -- 3. Fuzzy search -------------------------------------------------------------------
 
 -- word_similarity, not similarity: "nutella" should match "Nutella Brownie" fully.
--- Threshold 0.4 lets one-letter typos through ("brwnie" ~ 0.7) without matching noise.
+-- Threshold 0.4 lets one-letter typos through ("brwnie" scores 0.5 against "Nutella
+-- Brownie with Ice Cream") without matching noise.
+--
+-- The threshold is compared explicitly rather than via `SET pg_trgm.word_similarity_threshold`
+-- + the `<%` operator: Supabase's postgres role may not set that parameter on a function
+-- ("permission denied to set parameter"), which made this migration fail on re-run.
+-- The trigram indexes above still serve the ILIKE name filters in lib/search/fetch.ts.
 -- SECURITY INVOKER (the default), so RLS still applies to the caller.
 CREATE OR REPLACE FUNCTION search_fuzzy(q text, city_slug text)
 RETURNS TABLE (hit_kind text, hit_id uuid, sim real)
 LANGUAGE sql STABLE
 SET search_path = public, extensions
-SET pg_trgm.word_similarity_threshold = 0.4
 AS $$
   (SELECT 'dish'::text, d.id, word_similarity(q, d.name)
      FROM dishes d
@@ -81,7 +86,7 @@ AS $$
      JOIN cities c ON c.id = r.city_id
     WHERE c.slug = city_slug
       AND d.deleted_at IS NULL AND r.deleted_at IS NULL
-      AND q <% d.name
+      AND word_similarity(q, d.name) >= 0.4
     ORDER BY 3 DESC
     LIMIT 20)
   UNION ALL
@@ -90,7 +95,7 @@ AS $$
      JOIN cities c ON c.id = r.city_id
     WHERE c.slug = city_slug
       AND r.deleted_at IS NULL
-      AND q <% r.name
+      AND word_similarity(q, r.name) >= 0.4
     ORDER BY 3 DESC
     LIMIT 5)
   UNION ALL
@@ -100,7 +105,7 @@ AS $$
      JOIN cities c ON c.id = t.city_id
     WHERE c.slug = city_slug
       AND t.deleted_at IS NULL AND t.visited_dish_id IS NULL
-      AND (q <% t.dish_name OR q <% t.place_name)
+      AND GREATEST(word_similarity(q, t.dish_name), word_similarity(q, t.place_name)) >= 0.4
     ORDER BY 3 DESC
     LIMIT 6)
 $$;
