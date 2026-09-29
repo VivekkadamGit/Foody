@@ -145,7 +145,12 @@ const CUISINE_SYNONYMS: Record<string, Cuisine> = {
 }
 
 /** Words that describe intent rather than food, and should not be matched as terms. */
-const STOP_WORDS = new Set(['best', 'top', 'good', 'nice', 'the', 'a', 'an', 'in', 'near', 'me', 'for', 'of', 'food', 'dish', 'place'])
+const STOP_WORDS = new Set([
+  'best', 'top', 'good', 'nice', 'famous', 'popular',
+  'the', 'a', 'an', 'in', 'near', 'me', 'for', 'of', 'to',
+  'food', 'foods', 'dish', 'dishes', 'place', 'places', 'town', 'city',
+  'eat', 'what', 'where', 'something',
+])
 
 export type ParsedQuery = {
   /** Terms left over after taxonomy words were consumed — matched against dish names. */
