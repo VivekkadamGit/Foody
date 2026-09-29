@@ -10,27 +10,44 @@ import DishResultCard from '@/components/search/DishResultCard'
 import FilterChips from '@/components/search/FilterChips'
 import OnOurList from '@/components/search/OnOurList'
 
-type Params = { q?: string; city?: string; diet?: string; taste?: string; meal?: string }
+type Param = string | string[] | undefined
+type Params = { q?: Param; city?: Param; diet?: Param; taste?: Param; meal?: Param }
+
+/** A repeated query param arrives as an array; take the first. */
+const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v)
 
 export async function generateMetadata({ searchParams }: { searchParams: Params }) {
-  const q = (searchParams.q ?? '').trim()
+  const q = (first(searchParams.q) ?? '').trim()
   return { title: q ? `${q} — Chakh` : 'Search — Chakh' }
 }
 
 export default async function SearchPage({ searchParams }: { searchParams: Params }) {
-  const q = (searchParams.q ?? '').trim()
-  const citySlug = searchParams.city ?? CITY_PRIORITY[0]
-  const chips: ChipParams = { diet: searchParams.diet, taste: searchParams.taste, meal: searchParams.meal }
+  const q = (first(searchParams.q) ?? '').trim()
+  const citySlug = first(searchParams.city) ?? CITY_PRIORITY[0]
+  const chips: ChipParams = {
+    diet: first(searchParams.diet),
+    taste: first(searchParams.taste),
+    meal: first(searchParams.meal),
+  }
 
   const supabase = await createClient()
-  const { data: city } = await supabase.from('cities').select('name, slug').eq('slug', citySlug).maybeSingle()
+  const { data: city, error: cityError } = await supabase
+    .from('cities').select('name, slug').eq('slug', citySlug).maybeSingle()
+  if (cityError) {
+    console.error('[search] city lookup failed:', cityError.message)
+    return (
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        <p className="font-anek text-sand-dark">Search is unavailable right now.</p>
+      </main>
+    )
+  }
   if (!city) notFound()
 
   let res: SearchResponse | null = null
   try {
     res = await runSearch(supabase, q, city.slug, chips)
-  } catch {
-    // runSearch logged it; show the failure instead of a blank page.
+  } catch (err) {
+    console.error('[search] page failed:', err)
   }
 
   return (
@@ -77,7 +94,7 @@ function RestaurantList({ res, citySlug }: { res: SearchResponse; citySlug: stri
   if (res.restaurants.length === 0) return null
   return (
     <>
-      <p className="font-anek text-[11px] font-bold uppercase tracking-[0.15em] text-[#a09a90] mt-8 mb-3">Restaurants</p>
+      <p className="font-anek text-[11px] font-bold uppercase tracking-[0.15em] text-sand-dark mt-8 mb-3">Restaurants</p>
       <ul className="grid grid-cols-1 gap-2">
         {res.restaurants.map((r) => (
           <li key={r.id}>
@@ -124,7 +141,7 @@ function Results({ res, citySlug, cityName }: { res: SearchResponse; citySlug: s
           </div>
           {unrated.length > 0 && (
             <>
-              <p className="font-anek text-[11px] font-bold uppercase tracking-[0.15em] text-[#a09a90] mt-8 mb-3">Not rated yet</p>
+              <p className="font-anek text-[11px] font-bold uppercase tracking-[0.15em] text-sand-dark mt-8 mb-3">Not rated yet</p>
               <div className="grid grid-cols-1 gap-3">
                 {unrated.map((d) => <DishResultCard key={d.id} dish={d} citySlug={citySlug} />)}
               </div>

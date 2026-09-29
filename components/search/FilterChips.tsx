@@ -23,10 +23,14 @@ export default function FilterChips({
         const off = 'border-warm-200 text-charcoal hover:border-ember/60'
         const cls = `rounded-full border px-3.5 py-1.5 font-anek text-[13px] font-medium transition-colors`
         if (state === 'typed') {
-          return <span key={chip.value} className={`${cls} ${on} opacity-80`}>{chip.label}</span>
+          return <span key={chip.value} aria-label={`${chip.label} (from your search)`} className={`${cls} ${on} opacity-80`}>{chip.label}</span>
         }
         return (
-          <Link key={chip.value} href={chipHref(q, city, chips, chip)} className={`${cls} ${state === 'param' ? on : off}`}>
+          <Link
+            key={chip.value}
+            href={chipHref(q, city, chips, chip)}
+            aria-current={state === 'param' ? 'true' : undefined}
+            className={`${cls} ${state === 'param' ? on : off}`}>
             {chip.label}
           </Link>
         )

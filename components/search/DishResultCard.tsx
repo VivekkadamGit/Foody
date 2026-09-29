@@ -35,7 +35,7 @@ export default function DishResultCard({
       </div>
       <div className="flex items-center gap-2.5 flex-shrink-0">
         {dish.score === null ? (
-          <span className="font-anek text-[11px] text-[#a09a90] whitespace-nowrap">Not rated yet</span>
+          <span className="font-anek text-[11px] text-sand-dark whitespace-nowrap">Not rated yet</span>
         ) : (
           <>
             <QualityBadge score={dish.score} isMustTry={dish.isMustTry} size="sm" dark={false} />

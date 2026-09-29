@@ -20,8 +20,8 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient()
     return NextResponse.json(await runSearch(supabase, q, city))
-  } catch {
-    // runSearch already logged the underlying error.
+  } catch (err) {
+    console.error('[search] api failed:', err)
     return NextResponse.json({ error: 'search_failed' }, { status: 500 })
   }
 }
