@@ -4,7 +4,7 @@ import type { TrendingDish } from '@/types/database'
 export type TrendingEntry = Pick<
   TrendingDish,
   'id' | 'dish_name' | 'place_name' | 'area' | 'why' | 'source_url' | 'photo_url' | 'restaurant_id'
-> & { citySlug: string }
+> & { citySlug: string; buzz?: number }
 
 /** Strips a URL down to its host, so "Seen on instagram.com" reads cleanly. */
 function sourceHost(url: string | null): string | null {
@@ -49,6 +49,11 @@ export default function TrendingCard({ entry }: { entry: TrendingEntry }) {
         <p className="font-body text-sm text-charcoal/80 mt-2 leading-relaxed">{entry.why}</p>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5">
+          {entry.buzz ? (
+            <span className="font-body text-xs" aria-label={`Buzz ${entry.buzz} of 3`}>
+              {'🔥'.repeat(entry.buzz)}
+            </span>
+          ) : null}
           {/* Stands where the score sits on a tasted card — so the absence is stated, not just empty. */}
           <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 px-2 py-0.5 font-anek text-[10px] font-bold tracking-wide text-muted">
             🌱 NOT TASTED YET
