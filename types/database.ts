@@ -61,3 +61,21 @@ export const PRICE_LABELS: PriceLabel = {
   2: '₹₹ Mid-range',
   3: '₹₹₹ Premium',
 }
+
+// An entry in "Trending Right Now" — food the city is talking about that we have NOT
+// tasted. There is deliberately no score field: see migration 006.
+export type TrendingDish = {
+  id: string
+  dish_name: string
+  place_name: string
+  city_id: string
+  restaurant_id: string | null
+  area: string | null
+  why: string
+  source_url: string | null
+  photo_url: string | null
+  visited_dish_id: string | null
+  rank: number
+  created_at: string
+  deleted_at: string | null
+}

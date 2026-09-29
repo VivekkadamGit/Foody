@@ -31,6 +31,15 @@ export default function Navbar({ cities }: { cities?: City[] }) {
             </Link>
           ))}
 
+          <Link
+            href="/whats-new"
+            className={`font-body text-sm transition-colors duration-150 ${
+              pathname === '/whats-new' ? 'text-spice font-semibold' : 'text-muted hover:text-charcoal'
+            }`}
+          >
+            What&apos;s New
+          </Link>
+
           {process.env.NEXT_PUBLIC_ENABLE_AI_SUGGEST === 'true' && (
             <Link
               href="/suggest"
