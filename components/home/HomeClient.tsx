@@ -6,7 +6,8 @@ import Link from 'next/link'
 import MustTryRanking, { RankedDish } from './MustTryRanking'
 import QualityBadge from './QualityBadge'
 import CitiesGrid from './CitiesGrid'
-import type { SearchResults } from '@/app/api/search/route'
+import type { SearchResponse } from '@/lib/search/types'
+import { previewDishes, summaryLine } from '@/lib/search/present'
 
 export type CityBundle = {
   city: { name: string; slug: string }
@@ -34,7 +35,7 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
   const [activeSlug, setActiveSlug] = useState(bundles[0]?.city.slug ?? '')
   const [query, setQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
-  const [results, setResults] = useState<SearchResults>({ dishes: [], restaurants: [] })
+  const [results, setResults] = useState<SearchResponse | null>(null)
   const [searching, setSearching] = useState(false)
   const [searchFailed, setSearchFailed] = useState(false)
   const [words, setWords] = useState<FloatingWord[]>([])
@@ -159,7 +160,7 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
   useEffect(() => {
     const q = query.trim()
     if (q.length < 2 || !activeSlug) {
-      setResults({ dishes: [], restaurants: [] })
+      setResults(null)
       setSearching(false)
       setSearchFailed(false)
       return
@@ -179,7 +180,7 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
       } catch (err) {
         if ((err as Error).name === 'AbortError') return
         setSearchFailed(true)
-        setResults({ dishes: [], restaurants: [] })
+        setResults(null)
       } finally {
         setSearching(false)
       }
@@ -193,11 +194,14 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
 
   if (!active) return null
 
-  const hasResults = results.dishes.length > 0 || results.restaurants.length > 0
+  const preview = results ? previewDishes(results) : []
+  const previewRestaurants = results?.restaurants.slice(0, 3) ?? []
+  const hasResults = preview.length > 0 || previewRestaurants.length > 0 || (results?.onOurList.length ?? 0) > 0
+  const searchHref = `/search?q=${encodeURIComponent(query.trim())}&city=${encodeURIComponent(active.city.slug)}`
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    router.push(`/${active.city.slug}${query ? `?q=${encodeURIComponent(query)}` : ''}`)
+    router.push(query.trim() ? searchHref : `/search?city=${encodeURIComponent(active.city.slug)}`)
   }
 
   const popularTags = active.ranking.slice(0, 4).map((d) => d.name)
@@ -300,18 +304,28 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
                   <p className="px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0">Searching…</p>
                 )}
 
-                {!searchFailed && !searching && !hasResults && (
-                  <p className="px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0">
-                    Nothing matches &ldquo;{query.trim()}&rdquo; in {active.city.name}.
-                  </p>
+                {!searchFailed && results && hasResults && (
+                  <Link
+                    href={searchHref}
+                    className="flex items-center justify-between px-5 py-2.5 bg-[#fdf6f2] font-anek text-[13px] text-ember font-semibold hover:bg-[#fbeee6] transition-colors"
+                  >
+                    <span>{summaryLine(results)}</span>
+                    <span>See all →</span>
+                  </Link>
                 )}
 
-                {results.dishes.length > 0 && (
+                {!searchFailed && !searching && !hasResults && (
+                  <Link href={searchHref} className="block px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0 hover:text-ember">
+                    Nothing rated matches &ldquo;{query.trim()}&rdquo; in {active.city.name} yet — see the city&apos;s best →
+                  </Link>
+                )}
+
+                {preview.length > 0 && (
                   <>
                     <p className="px-5 pt-3 pb-1 font-anek text-[10px] font-bold uppercase tracking-[0.15em] text-[#a09a90] m-0">
                       Dishes
                     </p>
-                    {results.dishes.map((d) => (
+                    {preview.map((d) => (
                       <Link
                         key={d.id}
                         href={`/${active.city.slug}/${d.restaurantId}`}
@@ -343,12 +357,12 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
                   </>
                 )}
 
-                {results.restaurants.length > 0 && (
+                {previewRestaurants.length > 0 && (
                   <>
                     <p className="px-5 pt-3 pb-1 font-anek text-[10px] font-bold uppercase tracking-[0.15em] text-[#a09a90] m-0 border-t border-[#ede8e1]">
                       Restaurants
                     </p>
-                    {results.restaurants.map((r) => (
+                    {previewRestaurants.map((r) => (
                       <Link
                         key={r.id}
                         href={`/${active.city.slug}/${r.id}`}
