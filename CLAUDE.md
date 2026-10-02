@@ -66,7 +66,9 @@ The Next.js app deploys to **Vercel** (Hobby free plan). Each branch gets a prev
 
 ## Admin password reset (one-time Supabase setup)
 
-`/admin/forgot-password` emails a Supabase reset link that lands on `/auth/callback`, then `/admin/reset-password`. Supabase only redirects to allow-listed URLs: in the Supabase dashboard → **Authentication → URL Configuration → Redirect URLs**, add `http://localhost:3000/auth/callback` and `https://<your-vercel-domain>/auth/callback`. New admin accounts are created in **Authentication → Users → Add user** (tick Auto Confirm).
+`/admin/forgot-password` emails a Supabase reset link that lands on `/auth/callback`, then `/admin/reset-password`. Supabase only redirects to allow-listed URLs: in the Supabase dashboard → **Authentication → URL Configuration → Redirect URLs**, add `http://localhost:3000/auth/callback` and `https://<your-vercel-domain>/auth/callback`. If reset links fail on Vercel preview deployments, add a wildcard entry such as `https://*-<your-project>.vercel.app/**`. New admin accounts are created in **Authentication → Users → Add user** (tick Auto Confirm).
+
+Migration `009_trending_admin_read.sql` must be applied for the On our list Delete/Restore to work.
 
 ## Image Storage (Supabase Storage)
 
