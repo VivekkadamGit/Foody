@@ -112,7 +112,7 @@ export default function RestaurantActions({ restaurant }: { restaurant: Restaura
             <div className="flex flex-wrap gap-2">
               {CUISINES.map(c => (
                 <Chip key={c} selected={form.cuisine_type.includes(c)} onClick={() => toggleCuisine(c)}>
-                  {c}
+                  {c.replace(/\b\w/g, (ch) => ch.toUpperCase())}
                 </Chip>
               ))}
             </div>

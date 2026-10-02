@@ -4,19 +4,25 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import type { AdminDish } from '@/lib/admin/types'
 import DishList from '@/components/admin/DishList'
+import { EmptyState } from '@/components/admin/ui'
 import RestaurantActions from './RestaurantActions'
 import ReviewActions from './ReviewActions'
 
-export default async function ManageRestaurantPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ManageRestaurantPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: { tab?: string } }) {
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: restaurant } = await supabase
+  const { data: restaurant, error } = await supabase
     .from('restaurants')
     .select(`*, cities!inner(name, slug), dishes(*, reviews(*, testers(name)))`)
     .eq('id', id)
     .single()
 
+  // .single() reports "no rows" as PGRST116; that is a 404, not a load failure.
+  if (error && error.code !== 'PGRST116') {
+    console.error('[admin] restaurant query failed:', error.message)
+    return <EmptyState icon="⚠️" text="Couldn't load this restaurant — refresh to retry." />
+  }
   if (!restaurant) notFound()
 
   const adminDishes: AdminDish[] = (restaurant.dishes ?? []).map((d: any) => ({
@@ -74,7 +80,7 @@ export default async function ManageRestaurantPage({ params }: { params: Promise
             dishes={adminDishes}
             restaurants={[{ id: restaurant.id, name: restaurant.name }]}
             presetRestaurantId={restaurant.id}
-            showTabs={false}
+            initialTab={searchParams.tab}
           />
         </Suspense>
       </section>
