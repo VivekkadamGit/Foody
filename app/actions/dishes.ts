@@ -2,42 +2,102 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { EMPTY_TAGS, validateTags, type DishTags } from '@/lib/admin/dishTags'
 
-export async function updateDish(id: string, restaurantId: string, data: {
+export type DishInput = {
+  restaurant_id: string
   name: string
-  description: string
+  description: string | null
   is_must_try: boolean
   /** 0–10, one decimal. null means "not scored yet" — the dish stays out of rankings. */
   score: number | null
-}) {
-  if (data.score !== null && (Number.isNaN(data.score) || data.score < 0 || data.score > 10)) {
-    throw new Error('Score must be between 0 and 10')
-  }
+  photo_url: string | null
+} & DishTags
 
-  const supabase = await createClient()
-  const { error } = await supabase.from('dishes').update(data).eq('id', id)
-  if (error) throw new Error(error.message)
+export type DishPatch = Partial<Omit<DishInput, 'restaurant_id'>>
 
-  revalidatePath(`/admin/restaurants/${restaurantId}`)
+function checkScore(score: number | null | undefined) {
+  if (score === null || score === undefined) return
+  if (Number.isNaN(score) || score < 0 || score > 10) throw new Error('Score must be between 0 and 10')
+}
+
+function checkName(name: string | undefined) {
+  if (name !== undefined && name.trim() === '') throw new Error('Dish name is required')
+}
+
+async function revalidateDish(restaurantId: string | null) {
+  revalidatePath('/admin')
+  revalidatePath('/admin/dishes')
+  if (restaurantId) revalidatePath(`/admin/restaurants/${restaurantId}`)
   revalidatePath('/')
 }
 
-export async function softDeleteDish(id: string, restaurantId: string) {
+export async function createDish(input: DishInput): Promise<{ id: string }> {
+  checkName(input.name)
+  checkScore(input.score)
+  if (!input.restaurant_id) throw new Error('Pick a restaurant')
+  const tags = { ...EMPTY_TAGS, ...validateTags(input) }
+
   const supabase = await createClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
+    .from('dishes')
+    .insert({
+      restaurant_id: input.restaurant_id,
+      name: input.name.trim(),
+      description: input.description || null,
+      is_must_try: input.is_must_try,
+      score: input.score,
+      photo_url: input.photo_url,
+      ...tags,
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+
+  await revalidateDish(input.restaurant_id)
+  return { id: data.id }
+}
+
+export async function updateDish(id: string, patch: DishPatch): Promise<void> {
+  checkName(patch.name)
+  checkScore(patch.score)
+  const { diet, category, cuisine, tastes, meals, ...rest } = patch
+  const tagInput = Object.fromEntries(
+    Object.entries({ diet, category, cuisine, tastes, meals }).filter(([, v]) => v !== undefined)
+  )
+  const update = {
+    ...rest,
+    ...(rest.name !== undefined ? { name: rest.name.trim() } : {}),
+    ...validateTags(tagInput),
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.from('dishes').update(update).eq('id', id).select('restaurant_id').single()
+  if (error) throw new Error(error.message)
+
+  await revalidateDish(data.restaurant_id)
+}
+
+export async function softDeleteDish(id: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
     .from('dishes')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .select('restaurant_id')
+    .single()
   if (error) throw new Error(error.message)
-  revalidatePath(`/admin/restaurants/${restaurantId}`)
+  await revalidateDish(data.restaurant_id)
 }
 
-export async function restoreDish(id: string, restaurantId: string) {
+export async function restoreDish(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('dishes')
     .update({ deleted_at: null })
     .eq('id', id)
+    .select('restaurant_id')
+    .single()
   if (error) throw new Error(error.message)
-  revalidatePath(`/admin/restaurants/${restaurantId}`)
+  await revalidateDish(data.restaurant_id)
 }

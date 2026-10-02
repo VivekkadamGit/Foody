@@ -29,7 +29,7 @@ export default function DishActions({ dish }: { dish: Dish }) {
     startTransition(async () => {
       try {
         const trimmed = form.score.trim()
-        await updateDish(dish.id, dish.restaurantId, {
+        await updateDish(dish.id, {
           name: form.name,
           description: form.description,
           is_must_try: form.is_must_try,
@@ -46,7 +46,7 @@ export default function DishActions({ dish }: { dish: Dish }) {
     if (!confirm(`Soft-delete "${dish.name}"?`)) return
     startTransition(async () => {
       try {
-        await softDeleteDish(dish.id, dish.restaurantId)
+        await softDeleteDish(dish.id)
       } catch (e: any) {
         setError(e.message)
       }
@@ -56,7 +56,7 @@ export default function DishActions({ dish }: { dish: Dish }) {
   function handleRestore() {
     startTransition(async () => {
       try {
-        await restoreDish(dish.id, dish.restaurantId)
+        await restoreDish(dish.id)
       } catch (e: any) {
         setError(e.message)
       }

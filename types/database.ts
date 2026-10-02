@@ -25,6 +25,14 @@ export type Dish = {
   description: string | null
   photo_url: string | null
   is_must_try: boolean
+  /** 0–10, hand-set. null = not scored yet. */
+  score: number | null
+  diet: string | null
+  category: string | null
+  cuisine: string | null
+  tastes: string[]
+  meals: string[]
+  deleted_at: string | null
   created_at: string
 }
 
