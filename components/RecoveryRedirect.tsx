@@ -20,13 +20,15 @@ export default function RecoveryRedirect() {
 
   useEffect(() => {
     // Read before createClient(): the client strips the hash once it has consumed it.
-    const linkType = authLinkType(window.location.hash)
+    let linkType: ReturnType<typeof authLinkType> = authLinkType(window.location.hash)
     const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (window.location.pathname === RESET_PATH) return
       if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && linkType === 'recovery')) {
+        linkType = null
         router.replace(RESET_PATH)
       } else if (event === 'SIGNED_IN' && linkType === 'invite') {
+        linkType = null
         router.replace(`${RESET_PATH}?welcome=1`)
       }
     })
