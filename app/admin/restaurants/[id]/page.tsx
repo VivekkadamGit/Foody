@@ -1,9 +1,10 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import AddDishForm from './AddDishForm'
+import type { AdminDish } from '@/lib/admin/types'
+import DishList from '@/components/admin/DishList'
 import RestaurantActions from './RestaurantActions'
-import DishActions from './DishActions'
 import ReviewActions from './ReviewActions'
 
 export default async function ManageRestaurantPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,25 +19,40 @@ export default async function ManageRestaurantPage({ params }: { params: Promise
 
   if (!restaurant) notFound()
 
-  const activeDishes = restaurant.dishes?.filter((d: any) => !d.deleted_at) ?? []
-  const deletedDishes = restaurant.dishes?.filter((d: any) => d.deleted_at) ?? []
+  const adminDishes: AdminDish[] = (restaurant.dishes ?? []).map((d: any) => ({
+    id: d.id,
+    name: d.name,
+    description: d.description,
+    photo_url: d.photo_url,
+    is_must_try: !!d.is_must_try,
+    score: d.score === null || d.score === undefined ? null : Number(d.score),
+    deleted_at: d.deleted_at,
+    restaurant_id: d.restaurant_id,
+    restaurant_name: restaurant.name,
+    diet: d.diet,
+    category: d.category,
+    cuisine: d.cuisine,
+    tastes: d.tastes ?? [],
+    meals: d.meals ?? [],
+  }))
+  const dishesWithReviews = (restaurant.dishes ?? []).filter((d: any) => d.reviews?.length > 0)
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/admin" className="text-sm text-gray-500 hover:text-orange-600">← Dashboard</Link>
-          <h1 className={`text-2xl font-bold mt-1 ${restaurant.deleted_at ? 'line-through text-gray-400' : ''}`}>
+          <Link href={`/admin/restaurants?city=${restaurant.cities.slug}`} className="font-anek text-[13.5px] text-muted hover:text-charcoal">← Restaurants</Link>
+          <h1 className={`mt-1 font-anek text-3xl font-bold ${restaurant.deleted_at ? 'text-muted line-through' : 'text-charcoal'}`}>
             {restaurant.name}
           </h1>
-          <p className="text-gray-500 text-sm">{restaurant.cities.name} — {restaurant.address}</p>
+          <p className="font-anek text-[15px] text-muted">{restaurant.cities.name} — {restaurant.address}</p>
         </div>
         <Link
           href={`/${restaurant.cities.slug}/${restaurant.id}`}
           target="_blank"
-          className="text-sm text-orange-600 hover:text-orange-700"
+          className="font-anek text-[14px] font-semibold text-ember hover:underline"
         >
-          View public page →
+          View public page ↗
         </Link>
       </div>
 
@@ -51,101 +67,72 @@ export default async function ManageRestaurantPage({ params }: { params: Promise
         deleted_at: restaurant.deleted_at,
       }} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        {/* Add dish form */}
-        <div>
-          <h2 className="text-lg font-bold mb-3">Add a Dish</h2>
-          <AddDishForm restaurantId={restaurant.id} />
-        </div>
+      <section className="space-y-3">
+        <h2 className="font-anek text-xl font-bold text-charcoal">Dishes</h2>
+        <Suspense>
+          <DishList
+            dishes={adminDishes}
+            restaurants={[{ id: restaurant.id, name: restaurant.name }]}
+            presetRestaurantId={restaurant.id}
+            showTabs={false}
+          />
+        </Suspense>
+      </section>
 
-        {/* Existing dishes */}
-        <div>
-          <h2 className="text-lg font-bold mb-3">
-            Dishes ({activeDishes.length} active{deletedDishes.length > 0 ? `, ${deletedDishes.length} deleted` : ''})
-          </h2>
-
-          {restaurant.dishes?.length === 0 ? (
-            <p className="text-gray-400 text-sm">No dishes yet. Add one!</p>
-          ) : (
-            <div className="space-y-3">
-              {restaurant.dishes?.map((dish: any) => {
-                const activeReviews = dish.reviews?.filter((r: any) => !r.deleted_at) ?? []
-                const ratings = activeReviews.map((r: any) => r.rating)
-                const avg = ratings.length
-                  ? (ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length).toFixed(1)
-                  : null
-
-                return (
-                  <div
-                    key={dish.id}
-                    className={`bg-white rounded-xl border p-4 ${dish.deleted_at ? 'border-red-100 opacity-60' : 'border-gray-200'}`}
+      <section className="space-y-3">
+        <h2 className="font-anek text-xl font-bold text-charcoal">Visits</h2>
+        {dishesWithReviews.length === 0 && (
+          <p className="font-anek text-[15px] text-muted">No visits logged yet.</p>
+        )}
+        {(restaurant.dishes ?? []).map((dish: any) => {
+          const hasReviews = dish.reviews?.length > 0
+          if (!hasReviews) return null
+          return (
+            <div
+              key={dish.id}
+              className={`rounded-2xl border border-warm-200 bg-white p-6 ${dish.deleted_at ? 'opacity-60' : ''}`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className={`font-anek text-[15.5px] font-semibold ${dish.deleted_at ? 'text-muted line-through' : 'text-charcoal'}`}>
+                  {dish.name}
+                </span>
+                {!dish.deleted_at && (
+                  <Link
+                    href={`/admin/dishes/${dish.id}/review`}
+                    className="font-anek text-[13.5px] font-semibold text-ember hover:underline"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold ${dish.deleted_at ? 'line-through text-gray-400' : ''}`}>
-                          {dish.name}
-                        </span>
-                        {dish.is_must_try && !dish.deleted_at && (
-                          <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">Must Try</span>
-                        )}
-                        {dish.deleted_at && (
-                          <span className="text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded-full">deleted</span>
-                        )}
-                      </div>
-                      {dish.score !== null && dish.score !== undefined ? (
-                        <span className="text-amber-600 text-sm font-bold">{Number(dish.score).toFixed(1)}</span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">not scored</span>
-                      )}
-                    </div>
-
-                    {dish.description && (
-                      <p className="text-xs text-gray-500 mt-1">{dish.description}</p>
-                    )}
-
-                    <DishActions dish={{
-                      id: dish.id,
-                      name: dish.name,
-                      description: dish.description,
-                      is_must_try: dish.is_must_try,
-                      score: dish.score === null || dish.score === undefined ? null : Number(dish.score),
-                      deleted_at: dish.deleted_at,
-                      restaurantId: restaurant.id,
-                    }} />
-
-                    {/* Reviews */}
-                    {dish.reviews?.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reviews</p>
-                        {dish.reviews.map((review: any) => (
-                          <ReviewActions key={review.id} review={{
-                            id: review.id,
-                            rating: review.rating,
-                            taste_notes: review.taste_notes,
-                            visit_date: review.visit_date,
-                            deleted_at: review.deleted_at,
-                            restaurantId: restaurant.id,
-                            testerName: review.testers?.name ?? 'Tester',
-                          }} />
-                        ))}
-                      </div>
-                    )}
-
-                    {!dish.deleted_at && (
-                      <Link
-                        href={`/admin/dishes/${dish.id}/review`}
-                        className="text-xs text-orange-600 hover:text-orange-700 mt-3 inline-block font-medium"
-                      >
-                        + Add Review
-                      </Link>
-                    )}
-                  </div>
-                )
-              })}
+                    + Log a visit
+                  </Link>
+                )}
+              </div>
+              <div className="mt-3 space-y-2">
+                {dish.reviews.map((review: any) => (
+                  <ReviewActions key={review.id} review={{
+                    id: review.id,
+                    rating: review.rating,
+                    taste_notes: review.taste_notes,
+                    visit_date: review.visit_date,
+                    deleted_at: review.deleted_at,
+                    restaurantId: restaurant.id,
+                    testerName: review.testers?.name ?? 'Tester',
+                  }} />
+                ))}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
+          )
+        })}
+        {(restaurant.dishes ?? []).filter((d: any) => !d.deleted_at && !(d.reviews?.length > 0)).length > 0 && (
+          <p className="font-anek text-[13.5px] text-muted">
+            Log a first visit for:{' '}
+            {(restaurant.dishes ?? []).filter((d: any) => !d.deleted_at && !(d.reviews?.length > 0)).map((d: any, i: number) => (
+              <span key={d.id}>
+                {i > 0 && ', '}
+                <Link href={`/admin/dishes/${d.id}/review`} className="text-ember hover:underline">{d.name}</Link>
+              </span>
+            ))}
+          </p>
+        )}
+      </section>
     </div>
   )
 }

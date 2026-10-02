@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Button, Field, Input, Select, Chip } from '@/components/admin/ui'
 
 const CUISINES = ['gujarati', 'street food', 'chinese', 'south indian', 'north indian', 'desserts', 'fast food', 'continental', 'pizza', 'burgers']
 
@@ -95,100 +96,76 @@ export default function NewRestaurantPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Add New Restaurant</h1>
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name *</label>
-            <input
+    <div className="space-y-6">
+      <h1 className="font-anek text-3xl font-bold text-charcoal">Add New Restaurant</h1>
+      <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-warm-200 bg-white p-6">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field label="Restaurant Name *">
+            <Input
               type="text"
               required
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-            <select
+          </Field>
+          <Field label="City *">
+            <Select
               required
               value={form.city_id}
               onChange={(e) => setForm((f) => ({ ...f, city_id: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
             >
               <option value="">Select city</option>
               {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
+            </Select>
+          </Field>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Address (Google Places will autofill)</label>
-          <input
+        <Field label="Address (Google Places will autofill)">
+          <Input
             ref={addressRef}
             type="text"
             value={form.address}
             onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
             placeholder="Start typing the restaurant address..."
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
           {form.latitude && (
-            <p className="text-xs text-green-600 mt-1">✓ Location captured: {form.latitude}, {form.longitude}</p>
+            <p className="mt-1 font-anek text-xs text-[#1f7a52]">✓ Location captured: {form.latitude}, {form.longitude}</p>
           )}
-        </div>
+        </Field>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Price Range *</label>
+        <Field label="Price Range *">
           <div className="flex gap-3">
             {[['1', '₹ Budget'], ['2', '₹₹ Mid-range'], ['3', '₹₹₹ Premium']].map(([val, label]) => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, price_range: val }))}
-                className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${form.price_range === val ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'}`}
-              >
+              <Chip key={val} selected={form.price_range === val} onClick={() => setForm((f) => ({ ...f, price_range: val }))}>
                 {label}
-              </button>
+              </Chip>
             ))}
           </div>
-        </div>
+        </Field>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cuisine Types</label>
+        <Field label="Cuisine Types">
           <div className="flex flex-wrap gap-2">
             {CUISINES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => toggleCuisine(c)}
-                className={`text-sm px-3 py-1.5 rounded-full border capitalize transition-colors ${form.cuisine_type.includes(c) ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'}`}
-              >
+              <Chip key={c} selected={form.cuisine_type.includes(c)} onClick={() => toggleCuisine(c)}>
                 {c}
-              </button>
+              </Chip>
             ))}
           </div>
-        </div>
+        </Field>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image URL (optional)</label>
-          <input
+        <Field label="Cover Image URL (optional)">
+          <Input
             type="url"
             value={form.cover_image_url}
             onChange={(e) => setForm((f) => ({ ...f, cover_image_url: e.target.value }))}
             placeholder="https://..."
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
-        </div>
+        </Field>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition-colors"
-        >
+        {error && <p className="font-anek text-sm text-spice">{error}</p>}
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? 'Saving...' : 'Save Restaurant'}
-        </button>
+        </Button>
       </form>
     </div>
   )

@@ -1,5 +1,6 @@
 'use client'
 
+import { forwardRef } from 'react'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import type { DishStatus } from '@/lib/admin/dishStatus'
 
@@ -55,9 +56,10 @@ export function Field({ label, hint, error, htmlFor, children }: {
 const CONTROL =
   'w-full rounded-lg border border-warm-200 bg-cream px-3.5 py-2.5 font-anek text-[15px] text-charcoal placeholder:text-muted/70 focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20'
 
-export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`${CONTROL} ${props.className ?? ''}`} />
-}
+// forwardRef so callers (e.g. Google Places autocomplete) can attach a ref to the real <input>.
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(props, ref) {
+  return <input {...props} ref={ref} className={`${CONTROL} ${props.className ?? ''}`} />
+})
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea {...props} className={`${CONTROL} resize-none ${props.className ?? ''}`} />

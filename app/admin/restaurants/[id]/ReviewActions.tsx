@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Button, Field, Input, Textarea } from '@/components/admin/ui'
 import { updateReview, softDeleteReview, restoreReview } from '@/app/actions/reviews'
 
 type Review = {
@@ -57,88 +58,68 @@ export default function ReviewActions({ review }: { review: Review }) {
   }
 
   return (
-    <div className={`rounded-xl p-3 ${review.deleted_at ? 'bg-red-50 border border-red-100 opacity-60' : 'bg-orange-50'}`}>
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-orange-700">✓ {review.testerName}</span>
-          <span className="text-amber-500 text-xs">{'★'.repeat(review.rating)}</span>
-          <span className="text-xs text-gray-400">{review.visit_date}</span>
-          {review.deleted_at && <span className="text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded-full">deleted</span>}
+    <div className={`rounded-xl border p-3 ${review.deleted_at ? 'border-spice/30 bg-[#fdf0ea] opacity-60' : 'border-warm-100 bg-cream'}`}>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-anek text-xs font-semibold text-charcoal">✓ {review.testerName}</span>
+          <span className="text-xs text-amber-400">{'★'.repeat(review.rating)}</span>
+          <span className="font-anek text-xs text-muted">{review.visit_date}</span>
+          {review.deleted_at && <span className="rounded-full bg-warm-100 px-2 py-0.5 font-anek text-xs text-muted">deleted</span>}
         </div>
         <div className="flex gap-1">
-          <button
-            onClick={() => setEditing(e => !e)}
-            className="text-xs px-2 py-0.5 rounded border border-gray-200 hover:border-orange-400 hover:text-orange-600 transition-colors bg-white"
-          >
+          <Button variant="secondary" className="!px-2.5 !py-1 !text-xs" onClick={() => setEditing(e => !e)}>
             {editing ? 'Cancel' : 'Edit'}
-          </button>
+          </Button>
           {review.deleted_at ? (
-            <button
-              onClick={handleRestore}
-              disabled={isPending}
-              className="text-xs px-2 py-0.5 rounded border border-green-200 text-green-600 hover:bg-green-50 transition-colors bg-white disabled:opacity-50"
-            >
+            <Button variant="secondary" className="!px-2.5 !py-1 !text-xs" onClick={handleRestore} disabled={isPending}>
               Restore
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={handleDelete}
-              disabled={isPending}
-              className="text-xs px-2 py-0.5 rounded border border-red-200 text-red-500 hover:bg-red-50 transition-colors bg-white disabled:opacity-50"
-            >
+            <Button variant="danger" className="!px-2.5 !py-1 !text-xs" onClick={handleDelete} disabled={isPending}>
               Delete
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {review.taste_notes && !editing && (
-        <p className="text-sm text-gray-600">{review.taste_notes}</p>
+        <p className="font-anek text-sm text-charcoal">{review.taste_notes}</p>
       )}
 
       {editing && (
-        <div className="mt-2 space-y-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Rating</label>
+        <div className="mt-2 space-y-3">
+          <Field label="Rating">
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map(star => (
                 <button
                   key={star}
                   type="button"
                   onClick={() => setForm(f => ({ ...f, rating: star }))}
-                  className={`text-xl transition-transform hover:scale-110 ${star <= form.rating ? 'text-amber-400' : 'text-gray-200'}`}
+                  className={`text-xl transition-transform hover:scale-110 ${star <= form.rating ? 'text-amber-400' : 'text-warm-200'}`}
                 >
                   ★
                 </button>
               ))}
             </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Taste Notes</label>
-            <textarea
+          </Field>
+          <Field label="Taste Notes">
+            <Textarea
               value={form.taste_notes}
               onChange={e => setForm(f => ({ ...f, taste_notes: e.target.value }))}
               rows={2}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none bg-white"
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Visit Date</label>
-            <input
+          </Field>
+          <Field label="Visit Date">
+            <Input
               type="date"
               value={form.visit_date}
               onChange={e => setForm(f => ({ ...f, visit_date: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
             />
-          </div>
-          {error && <p className="text-red-500 text-xs">{error}</p>}
-          <button
-            onClick={handleSave}
-            disabled={isPending}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white font-bold py-1.5 rounded-lg text-sm transition-colors"
-          >
+          </Field>
+          {error && <p className="font-anek text-xs text-spice">{error}</p>}
+          <Button onClick={handleSave} disabled={isPending} className="w-full">
             {isPending ? 'Saving...' : 'Save'}
-          </button>
+          </Button>
         </div>
       )}
     </div>
