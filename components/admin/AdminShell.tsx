@@ -22,6 +22,8 @@ export default function AdminShell({ email, children }: { email: string | null; 
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
+  if (path === '/admin/reset-password') return <ToastProvider>{children}</ToastProvider>
+
   async function signOut() {
     await createClient().auth.signOut()
     router.push('/admin/login')

@@ -22,7 +22,9 @@ describe('loginErrorMessage', () => {
 describe('loginNotice', () => {
   it('maps query params to notices', () => {
     expect(loginNotice({ reset: 'sent' })).toEqual({ tone: 'info', text: 'Check your inbox for a reset link.' })
-    expect(loginNotice({ error: 'link' })?.tone).toBe('error')
+    const linkNotice = loginNotice({ error: 'link' })
+    expect(linkNotice?.tone).toBe('error')
+    expect(linkNotice?.text).toContain('different browser')
     expect(loginNotice({})).toBeNull()
   })
 })

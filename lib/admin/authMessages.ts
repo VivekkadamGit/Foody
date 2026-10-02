@@ -17,7 +17,7 @@ export function loginErrorMessage(err: { message?: string } | null | undefined):
 export function loginNotice(params: { reset?: string; error?: string }): { tone: 'info' | 'error'; text: string } | null {
   if (params.reset === 'sent') return { tone: 'info', text: 'Check your inbox for a reset link.' }
   if (params.error === 'link') {
-    return { tone: 'error', text: 'That reset link has expired or was already used. Request a new one.' }
+    return { tone: 'error', text: "That reset link didn't work — it may have expired or been used, or been opened in a different browser than the one you requested it from. Request a new one from this browser." }
   }
   return null
 }

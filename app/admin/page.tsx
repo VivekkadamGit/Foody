@@ -9,7 +9,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: {
 
   const [restaurantsRes, dishesRes, trendingRes, reviewsRes] = await Promise.all([
     supabase.from('restaurants').select('id, name, created_at, cities!inner(name)').is('deleted_at', null).order('created_at', { ascending: false }),
-    supabase.from('dishes').select('id, score, diet, category').is('deleted_at', null),
+    supabase.from('dishes').select('id, score, diet, category, restaurants!inner(deleted_at)').is('deleted_at', null).is('restaurants.deleted_at', null),
     supabase.from('trending_dishes').select('id, diet, category').is('deleted_at', null).is('visited_dish_id', null),
     supabase
       .from('reviews')
@@ -65,6 +65,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: {
 
       <section className="rounded-2xl border border-warm-200 bg-white p-6">
         <h2 className="font-anek text-lg font-bold text-charcoal">Needs attention</h2>
+        <p className="font-anek text-[13px] text-muted">Across all cities</p>
         {todo.length === 0 ? (
           <p className="mt-2 font-anek text-[15px] text-[#1f7a52]">✓ All caught up.</p>
         ) : (

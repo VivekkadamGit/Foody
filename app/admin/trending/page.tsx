@@ -25,7 +25,7 @@ export default async function AdminTrendingPage({ searchParams }: { searchParams
       .eq('city_id', cityRow.id)
       .order('buzz', { ascending: false }).order('rank').order('created_at', { ascending: false }),
     supabase.from('restaurants').select('id, name').eq('city_id', cityRow.id).is('deleted_at', null).order('name'),
-    supabase.from('dishes').select('id, name, restaurants!inner(name, city_id)').eq('restaurants.city_id', cityRow.id).is('deleted_at', null).order('name'),
+    supabase.from('dishes').select('id, name, restaurants!inner(name, city_id, deleted_at)').eq('restaurants.city_id', cityRow.id).is('restaurants.deleted_at', null).is('deleted_at', null).order('name'),
   ])
   if (trendingRes.error || restaurantsRes.error || dishesRes.error) {
     console.error('[admin] trending query failed:', trendingRes.error?.message ?? restaurantsRes.error?.message ?? dishesRes.error?.message)

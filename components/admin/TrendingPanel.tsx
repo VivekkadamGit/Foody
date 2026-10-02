@@ -125,7 +125,7 @@ export default function TrendingPanel({
           )}
           <div className="flex items-center gap-2">
             {!isNew && (
-              <Button variant="danger" type="button" loading={busy === 'delete'}
+              <Button variant="danger" type="button" loading={busy === 'delete'} disabled={busy !== null}
                 onClick={() => {
                   if (!entry.deleted_at && !window.confirm('Remove this place from the list?')) return
                   run('delete', () => (entry.deleted_at ? restoreTrending(entry.id) : softDeleteTrending(entry.id)), entry.deleted_at ? 'Restored' : 'Deleted')

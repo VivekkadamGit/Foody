@@ -112,7 +112,13 @@ export default function DishPanel({
         : (await updateDish(dish.id, fields), dish.id)
       setPhoto(null)
       setFileKey((k) => k + 1)
-      setForm((f) => ({ ...f, photo_url }))
+      setForm((f) => ({
+        ...f,
+        name: f.name.trim(),
+        description: f.description.trim(),
+        score: score === null ? '' : String(score),
+        photo_url,
+      }))
       toast('Saved')
       router.refresh()
       onSaved(id)
@@ -153,7 +159,7 @@ export default function DishPanel({
           {error && <p role="alert" className="font-anek text-[13.5px] text-spice">{error}</p>}
           <div className="flex items-center gap-2">
             {!isNew && (
-              <Button variant="danger" type="button" loading={busy === 'delete'} onClick={toggleDeleted}>
+              <Button variant="danger" type="button" loading={busy === 'delete'} disabled={busy !== null} onClick={toggleDeleted}>
                 {dish.deleted_at ? 'Restore' : 'Delete'}
               </Button>
             )}
