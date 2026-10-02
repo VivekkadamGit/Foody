@@ -33,3 +33,5 @@
   70%  { opacity: var(--peak); }
   100% { opacity: 0; transform: translateY(-16px) scale(1.015); }
 }
+
+@keyframes slidein { from { transform: translateX(24px); opacity: 0 } to { transform: none; opacity: 1 } }
