@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createDish, restoreDish, softDeleteDish, updateDish } from '@/app/actions/dishes'
@@ -54,7 +54,24 @@ export default function DishPanel({
   const [busy, setBusy] = useState<null | 'save' | 'next' | 'delete'>(null)
   const [error, setError] = useState('')
 
-  useEffect(() => { setForm(initial); setPhoto(null); setError('') }, [initial])
+  const initialRef = useRef(initial)
+  initialRef.current = initial
+  const resetKey = open ? (dish?.id ?? 'new') : null
+  useEffect(() => {
+    if (resetKey === null) return
+    setForm(initialRef.current)
+    setPhoto(null)
+    setError('')
+  }, [resetKey])
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [fileKey, setFileKey] = useState(0)
+  useEffect(() => {
+    if (!photo) { setPreviewUrl(null); return }
+    const url = URL.createObjectURL(photo)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [photo])
 
   const dirty = photo !== null || JSON.stringify(form) !== JSON.stringify(initial)
   const isNew = dish === null
@@ -174,12 +191,12 @@ export default function DishPanel({
           <div className="flex items-center gap-3">
             {(photo || form.photo_url) && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photo ? URL.createObjectURL(photo) : form.photo_url!} alt="" className="h-16 w-16 rounded-lg object-cover" />
+              <img src={(photo ? previewUrl : form.photo_url) ?? ''} alt="" className="h-16 w-16 rounded-lg object-cover" />
             )}
-            <input id="photo" type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+            <input key={fileKey} id="photo" type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
               className="min-w-0 flex-1 font-anek text-[13px] text-muted file:mr-3 file:rounded-full file:border-0 file:bg-warm-100 file:px-3 file:py-1.5 file:font-semibold file:text-charcoal" />
             {(photo || form.photo_url) && (
-              <button type="button" className="font-anek text-[13px] text-muted hover:text-spice" onClick={() => { setPhoto(null); setForm({ ...form, photo_url: null }) }}>
+              <button type="button" className="font-anek text-[13px] text-muted hover:text-spice" onClick={() => { setPhoto(null); setFileKey((k) => k + 1); setForm({ ...form, photo_url: null }) }}>
                 Remove
               </button>
             )}

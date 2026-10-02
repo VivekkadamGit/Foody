@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { dishStatus } from '@/lib/admin/dishStatus'
 import type { AdminDish } from '@/lib/admin/types'
@@ -50,6 +50,9 @@ export default function DishList({
     .filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase()))
 
   const current = openId && openId !== 'new' ? dishes.find((d) => d.id === openId) ?? null : null
+
+  const lastDish = useRef<AdminDish | null>(null)
+  if (current) lastDish.current = current
 
   function setTab(key: TabKey) {
     const qs = new URLSearchParams(params.toString())
@@ -125,7 +128,7 @@ export default function DishList({
 
       <DishPanel
         open={openId !== null}
-        dish={current}
+        dish={openId === 'new' ? null : (current ?? (openId === null ? lastDish.current : null))}
         restaurants={restaurants}
         presetRestaurantId={presetRestaurantId}
         onClose={() => setOpenId(null)}
