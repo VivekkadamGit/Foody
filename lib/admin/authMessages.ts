@@ -38,3 +38,11 @@ export function resetRequestError(err: { message?: string; status?: number } | n
   }
   return `Couldn't send the reset email (${m}). If this keeps happening, reset the password in Supabase → Authentication → Users.`
 }
+
+const LINK_TYPES = ['invite', 'recovery', 'signup', 'magiclink'] as const
+
+/** Reads `type=` from a Supabase auth redirect hash (#access_token=…&type=invite). */
+export function authLinkType(hash: string): (typeof LINK_TYPES)[number] | null {
+  const t = new URLSearchParams(hash.replace(/^#/, '')).get('type')
+  return (LINK_TYPES as readonly string[]).includes(t ?? '') ? (t as (typeof LINK_TYPES)[number]) : null
+}

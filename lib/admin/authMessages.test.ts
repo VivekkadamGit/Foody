@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { loginErrorMessage, loginNotice, resetRequestError } from './authMessages'
+import { loginErrorMessage, loginNotice, resetRequestError, authLinkType } from './authMessages'
 
 describe('loginErrorMessage', () => {
   it('explains wrong credentials and the Directus mix-up', () => {
@@ -45,5 +45,15 @@ describe('resetRequestError', () => {
     const m = resetRequestError({ message: 'Error sending recovery email' })
     expect(m).toContain('Error sending recovery email')
     expect(m).toContain('Supabase')
+  })
+})
+
+describe('authLinkType', () => {
+  it('reads the type from an auth redirect hash', () => {
+    expect(authLinkType('#access_token=a&refresh_token=b&type=invite')).toBe('invite')
+    expect(authLinkType('#type=recovery&access_token=a')).toBe('recovery')
+    expect(authLinkType('')).toBeNull()
+    expect(authLinkType('#section-2')).toBeNull()
+    expect(authLinkType('#type=weird')).toBeNull()
   })
 })
