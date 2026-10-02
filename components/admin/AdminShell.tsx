@@ -11,6 +11,8 @@ const NAV = [
   { href: '/admin/dishes', label: 'Dishes', icon: '🍽' },
   { href: '/admin/trending', label: 'On our list', icon: '🔥' },
   { href: '/admin/restaurants', label: 'Restaurants', icon: '🏪' },
+  { href: '/admin/cities', label: 'Cities', icon: '🏙' },
+  { href: '/admin/team', label: 'Team', icon: '👥' },
 ]
 
 function isActive(path: string, href: string) {
