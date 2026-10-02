@@ -66,7 +66,7 @@ No database migrations are needed. Every column this writes to already exists.
 
 - `dishTags.ts`:
   - `type DishTags = { diet: Diet | null; category: CategoryLeaf | null; cuisine: Cuisine | null; tastes: Taste[]; meals: Meal[] }`
-  - `validateTags(input: unknown): DishTags`. Throws `Error('Unknown diet: x')` etc. for values outside the taxonomy; drops duplicates.
+  - `validateTags(input: Record<string, unknown>): Partial<DishTags>`. Validates only the keys present, so a partial update never blanks other tags; `EMPTY_TAGS` fills the rest on create. Throws `Error('Unknown diet: x')` etc. for values outside the taxonomy; drops duplicates.
   - `tagLabel(dim, value)` gives human labels. Category uses the same labels as `BOARD_LABELS` in `lib/search/rank.ts` ("Cakes & Bakes"…), everything else uses `labelFor`.
 - `dishStatus.ts`: `dishStatus(d: { score: number | null; diet: string | null; category: string | null; deleted_at: string | null })` returns `'deleted' | 'needs_tags' | 'needs_score' | 'scored'`. Precedence is deleted → needs_tags → needs_score → scored. It reuses `isUntagged` from `lib/taxonomy.ts`.
 - `score.ts`: `parseScore(raw: string): number | null`. Blank gives null. Otherwise it must be a number from 0 to 10, rounded to 1 decimal; anything else throws `'Score must be between 0 and 10'`.
