@@ -22,38 +22,32 @@ export default function SidePanel({
   children: ReactNode
 }) {
   const asideRef = useRef<HTMLElement>(null)
-  const previousActiveRef = useRef<HTMLElement | null>(null)
-  const previousOverflowRef = useRef<string>('')
   const titleId = useRef(`panel-title-${Math.random().toString(36).slice(2)}`).current
+  const onCloseRef = useRef(onClose)
 
   useEffect(() => {
-    if (!open) {
-      // Restore focus and scroll
-      if (previousActiveRef.current) {
-        previousActiveRef.current.focus()
-        previousActiveRef.current = null
-      }
-      if (previousOverflowRef.current !== '') {
-        document.body.style.overflow = previousOverflowRef.current
-        previousOverflowRef.current = ''
-      }
-      return
-    }
+    onCloseRef.current = onClose
+  })
 
-    // Remember and lock
-    previousActiveRef.current = document.activeElement as HTMLElement
-    previousOverflowRef.current = document.body.style.overflow
+  // Focus + scroll lock: runs only when `open` flips, and always restores on close/unmount.
+  useEffect(() => {
+    if (!open) return
+    const opener = document.activeElement as HTMLElement | null
+    const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-
-    // Focus panel
-    if (asideRef.current) {
-      asideRef.current.focus()
+    asideRef.current?.focus()
+    return () => {
+      document.body.style.overflow = prevOverflow
+      opener?.focus?.()
     }
+  }, [open])
 
-    // Keyboard handlers
+  // Keys: Esc closes, Tab is trapped. Reads onClose through the ref so it never re-subscribes.
+  useEffect(() => {
+    if (!open) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
         return
       }
 
@@ -84,7 +78,7 @@ export default function SidePanel({
 
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
