@@ -53,6 +53,7 @@ export default function DishList({
 
   const lastDish = useRef<AdminDish | null>(null)
   if (current) lastDish.current = current
+  else if (openId === 'new') lastDish.current = null
 
   function setTab(key: TabKey) {
     const qs = new URLSearchParams(params.toString())
