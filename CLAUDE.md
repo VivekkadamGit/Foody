@@ -31,7 +31,7 @@ Two independent services sharing one Supabase Postgres database:
 
 **Public routes** live under `app/(public)/` — these are the visitor-facing pages. All public Supabase queries must include `.is('deleted_at', null)` to filter soft-deleted content.
 
-**Admin routes** live under `app/admin/` — protected by `middleware.ts`, which redirects signed-out users to `/admin/login` (`/admin/forgot-password` is also public). Auth is Supabase email/password. Pages: Dashboard (`/admin`, "Needs attention"), Dishes (`/admin/dishes` — side-panel editing of score + search tags, Save & next), On our list (`/admin/trending` — viral places, buzz, tags, mark visited), Restaurants (`/admin/restaurants`). UI building blocks are in `components/admin/`; tag options come only from `lib/taxonomy.ts`, validated server-side by `lib/admin/dishTags.ts`. The custom admin coexists with Directus — both point at the same DB, but logins are separate.
+**Admin routes** live under `app/admin/` — protected by `middleware.ts`, which redirects signed-out users to `/admin/login` (`/admin/forgot-password` is also public). Auth is Supabase email/password. Pages: Dashboard (`/admin`, "Needs attention"), Dishes (`/admin/dishes` — side-panel editing of score + search tags, Save & next), On our list (`/admin/trending` — viral places, buzz, tags, mark visited), Restaurants (`/admin/restaurants`), Cities (`/admin/cities` — Live/Coming soon; delete only when a city has no restaurants, because restaurants cascade), Team (`/admin/team` — tester profiles are auto-created on sign-in; admins invite by email, change roles, and remove access by banning, never deleting, since reviews cascade with the user). UI building blocks are in `components/admin/`; tag options come only from `lib/taxonomy.ts`, validated server-side by `lib/admin/dishTags.ts`. The custom admin coexists with Directus — both point at the same DB, but logins are separate.
 
 **Server Actions** in `app/actions/` handle all admin mutations (update, softDelete, restore) and call `revalidatePath` to refresh the page. Client components (`*Actions.tsx`) call these server actions via `useTransition`.
 
@@ -58,7 +58,7 @@ The direct DB host (`db.uftgjzfmlyvkniegawms.supabase.co`) is IPv6-only and won'
 
 ### Directus CMS (`/cms`)
 
-Directus auto-discovers the existing Postgres schema. After running a DB migration, go to **Settings → Data Model → Reload** in the Directus UI to pick up schema changes. Directus creates its own `directus_*` system tables alongside the Chakh tables — do not modify these.
+Directus auto-discovers the existing Postgres schema. After running a DB migration, restart Directus (`cd cms && npm start`) to pick up schema changes (Directus 11 has no reload button). Directus creates its own `directus_*` system tables alongside the Chakh tables — do not modify these.
 
 ## Deployment
 
@@ -66,9 +66,11 @@ The Next.js app deploys to **Vercel** (Hobby free plan). Each branch gets a prev
 
 ## Admin password reset (one-time Supabase setup)
 
-`/admin/forgot-password` emails a Supabase reset link that lands on `/auth/callback`, then `/admin/reset-password`. Supabase only redirects to allow-listed URLs: in the Supabase dashboard → **Authentication → URL Configuration → Redirect URLs**, add `http://localhost:3000/auth/callback` and `https://<your-vercel-domain>/auth/callback`. If reset links fail on Vercel preview deployments, add a wildcard entry such as `https://*-<your-project>.vercel.app/**`. New admin accounts are created in **Authentication → Users → Add user** (tick Auto Confirm).
+`/admin/forgot-password` emails a Supabase reset link that lands on `/auth/callback`, then `/admin/reset-password`. Supabase only redirects to allow-listed URLs: in the Supabase dashboard → **Authentication → URL Configuration → Redirect URLs**, add `http://localhost:3000/auth/callback` and `https://<your-vercel-domain>/auth/callback`. If reset links fail on Vercel preview deployments, add a wildcard entry such as `https://*-<your-project>.vercel.app/**`. New admin accounts are created in **Authentication → Users → Add user** (tick Auto Confirm). Add `…/admin/reset-password` to the same Redirect URLs list — team invites land there.
 
 Migration `009_trending_admin_read.sql` must be applied for the On our list Delete/Restore to work.
+
+Migration `010_admin_cities_team.sql` must be applied for the Cities page to save and for testers to rename themselves.
 
 ## Image Storage (Supabase Storage)
 

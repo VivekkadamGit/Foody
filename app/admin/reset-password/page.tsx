@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import AuthLayout from '@/components/admin/AuthLayout'
 import { Button, Field } from '@/components/admin/ui'
 import PasswordInput from '@/components/admin/PasswordInput'
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter()
+  const welcome = useSearchParams().get('welcome') === '1'
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -39,7 +40,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Choose a new password" subtitle="You'll use it to sign in to the Chakh admin.">
+    <AuthLayout title={welcome ? 'Welcome to Chakh — set your password' : 'Choose a new password'}
+      subtitle={welcome ? "You've been invited to the Chakh admin. Pick a password to finish." : "You'll use it to sign in to the Chakh admin."}>
       <form onSubmit={handleSubmit} className="space-y-5">
         <Field label="New password" htmlFor="pw" hint="At least 8 characters.">
           <PasswordInput id="pw" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -60,5 +62,13 @@ export default function ResetPasswordPage() {
         </Link>
       </form>
     </AuthLayout>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
