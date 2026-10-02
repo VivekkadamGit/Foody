@@ -31,7 +31,7 @@ export async function updateCity(id: string, input: { name: string; slug: string
   revalidateCities()
 }
 
-/** restaurants.city_id is ON DELETE CASCADE — refuse unless there is nothing to cascade. */
+/** The DB refuses (ON DELETE RESTRICT); this count check only produces a friendlier error. */
 export async function deleteCity(id: string) {
   const supabase = await createClient()
   const { count, error: countError } = await supabase
@@ -43,7 +43,10 @@ export async function deleteCity(id: string) {
 
   const { error } = await supabase.from('cities').delete().eq('id', id)
   if (error) {
-    if (/foreign key/i.test(error.message)) throw new Error('This city is still used by an On our list entry. Remove those first.')
+    if (/foreign key/i.test(error.message)) {
+      if (/restaurants/i.test(error.message)) throw new Error('This city still has restaurants (including deleted ones). Move or delete them first.')
+      throw new Error('This city is still used by an On our list entry. Remove those first.')
+    }
     throw new Error(error.message)
   }
   revalidateCities()

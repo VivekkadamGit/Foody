@@ -63,7 +63,11 @@ export async function setRole(userId: string, role: 'tester' | 'admin') {
   await requireAdmin()
   if (role !== 'tester' && role !== 'admin') throw new Error('Unknown role')
   const admin = createAdminClient()
-  if (role === 'tester') {
+  const { data: target, error: targetError } = await admin.from('testers').select('role').eq('id', userId).maybeSingle()
+  if (targetError) throw new Error(targetError.message)
+  if (!target) throw new Error('No such teammate')
+  if (target.role === role) return
+  if (target.role === 'admin' && role === 'tester') {
     const { count, error } = await admin.from('testers').select('id', { count: 'exact', head: true }).eq('role', 'admin')
     if (error) throw new Error(error.message)
     if (!canDemote(count ?? 0)) throw new Error('The team needs at least one admin')
@@ -73,7 +77,11 @@ export async function setRole(userId: string, role: 'tester' | 'admin') {
   revalidatePath('/admin/team')
 }
 
-/** Ban, never delete: deleting an auth user cascades away their reviews. */
+/**
+ * Ban, never delete: deleting an auth user cascades away their reviews.
+ * Bans block new sign-ins and token refreshes only, so a removed user's existing session
+ * can keep working until its access token expires (about an hour).
+ */
 export async function removeAccess(userId: string) {
   const me = await requireAdmin()
   if (me.id === userId) throw new Error("You can't remove your own access")
