@@ -1,19 +1,12 @@
-import AdminNav from './AdminNav'
+import AdminShell from '@/components/admin/AdminShell'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Signed out — in practice the login page. Render it standalone: no nav offering
-  // "Sign Out" to someone who isn't signed in, and no width clamp fighting its
-  // own full-screen layout.
+  // Signed out — login / forgot / reset render standalone, full screen.
   if (!user) return <>{children}</>
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      <main className="max-w-4xl mx-auto px-4 py-8">{children}</main>
-    </div>
-  )
+  return <AdminShell email={user.email ?? null}>{children}</AdminShell>
 }
