@@ -31,7 +31,7 @@ Two independent services sharing one Supabase Postgres database:
 
 **Public routes** live under `app/(public)/` — these are the visitor-facing pages. All public Supabase queries must include `.is('deleted_at', null)` to filter soft-deleted content.
 
-**Admin routes** live under `app/admin/` — protected by `middleware.ts` which redirects unauthenticated users to `/admin/login`. Auth is Supabase email/password. The custom admin coexists with Directus — both point at the same DB.
+**Admin routes** live under `app/admin/` — protected by `middleware.ts`, which redirects signed-out users to `/admin/login` (`/admin/forgot-password` is also public). Auth is Supabase email/password. Pages: Dashboard (`/admin`, "Needs attention"), Dishes (`/admin/dishes` — side-panel editing of score + search tags, Save & next), On our list (`/admin/trending` — viral places, buzz, tags, mark visited), Restaurants (`/admin/restaurants`). UI building blocks are in `components/admin/`; tag options come only from `lib/taxonomy.ts`, validated server-side by `lib/admin/dishTags.ts`. The custom admin coexists with Directus — both point at the same DB, but logins are separate.
 
 **Server Actions** in `app/actions/` handle all admin mutations (update, softDelete, restore) and call `revalidatePath` to refresh the page. Client components (`*Actions.tsx`) call these server actions via `useTransition`.
 
@@ -63,6 +63,10 @@ Directus auto-discovers the existing Postgres schema. After running a DB migrati
 ## Deployment
 
 The Next.js app deploys to **Vercel** (Hobby free plan). Each branch gets a preview deployment automatically. Production is the `master` branch.
+
+## Admin password reset (one-time Supabase setup)
+
+`/admin/forgot-password` emails a Supabase reset link that lands on `/auth/callback`, then `/admin/reset-password`. Supabase only redirects to allow-listed URLs: in the Supabase dashboard → **Authentication → URL Configuration → Redirect URLs**, add `http://localhost:3000/auth/callback` and `https://<your-vercel-domain>/auth/callback`. New admin accounts are created in **Authentication → Users → Add user** (tick Auto Confirm).
 
 ## Image Storage (Supabase Storage)
 
