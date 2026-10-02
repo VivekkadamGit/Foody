@@ -10,6 +10,15 @@ function revalidateCities() {
   revalidatePath('/whats-new')
 }
 
+const REFUSED = "Couldn't save — the change was refused. Has migration 010 been applied?"
+
+async function requireUser() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not signed in')
+  return supabase
+}
+
 function friendly(message: string): string {
   if (/duplicate key|cities_slug_key/i.test(message)) return 'Another city already uses that slug'
   return message
@@ -17,7 +26,7 @@ function friendly(message: string): string {
 
 export async function createCity(input: { name: string; slug: string; status: string }) {
   const city = validateCity(input)
-  const supabase = await createClient()
+  const supabase = await requireUser()
   const { error } = await supabase.from('cities').insert(city)
   if (error) throw new Error(friendly(error.message))
   revalidateCities()
@@ -25,15 +34,16 @@ export async function createCity(input: { name: string; slug: string; status: st
 
 export async function updateCity(id: string, input: { name: string; slug: string; status: string }) {
   const city = validateCity(input)
-  const supabase = await createClient()
-  const { error } = await supabase.from('cities').update(city).eq('id', id)
+  const supabase = await requireUser()
+  const { data, error } = await supabase.from('cities').update(city).eq('id', id).select('id')
   if (error) throw new Error(friendly(error.message))
+  if (!data || data.length === 0) throw new Error(REFUSED)
   revalidateCities()
 }
 
 /** The DB refuses (ON DELETE RESTRICT); this count check only produces a friendlier error. */
 export async function deleteCity(id: string) {
-  const supabase = await createClient()
+  const supabase = await requireUser()
   const { count, error: countError } = await supabase
     .from('restaurants')
     .select('id', { count: 'exact', head: true })
@@ -41,7 +51,7 @@ export async function deleteCity(id: string) {
   if (countError) throw new Error(countError.message)
   if ((count ?? 0) > 0) throw new Error('This city still has restaurants (including deleted ones). Move or delete them first.')
 
-  const { error } = await supabase.from('cities').delete().eq('id', id)
+  const { data, error } = await supabase.from('cities').delete().eq('id', id).select('id')
   if (error) {
     if (/foreign key/i.test(error.message)) {
       if (/restaurants/i.test(error.message)) throw new Error('This city still has restaurants (including deleted ones). Move or delete them first.')
@@ -49,5 +59,6 @@ export async function deleteCity(id: string) {
     }
     throw new Error(error.message)
   }
+  if (!data || data.length === 0) throw new Error(REFUSED)
   revalidateCities()
 }

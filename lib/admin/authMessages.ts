@@ -46,3 +46,11 @@ export function authLinkType(hash: string): (typeof LINK_TYPES)[number] | null {
   const t = new URLSearchParams(hash.replace(/^#/, '')).get('type')
   return (LINK_TYPES as readonly string[]).includes(t ?? '') ? (t as (typeof LINK_TYPES)[number]) : null
 }
+
+/** Both tokens from an implicit-flow auth redirect hash, or null if either is missing. */
+export function authLinkTokens(hash: string): { access_token: string; refresh_token: string } | null {
+  const p = new URLSearchParams(hash.replace(/^#/, ''))
+  const access_token = p.get('access_token')
+  const refresh_token = p.get('refresh_token')
+  return access_token && refresh_token ? { access_token, refresh_token } : null
+}

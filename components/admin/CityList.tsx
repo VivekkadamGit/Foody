@@ -121,7 +121,7 @@ export default function CityList({ cities }: { cities: AdminCity[] }) {
         open={openId !== null}
         onClose={close}
         title={openId === 'new' ? 'Add a city' : shown?.name ?? ''}
-        subtitle={shown ? `${shown.liveRestaurants} restaurants · ${shown.dishes} dishes` : undefined}
+        subtitle={shown ? `${shown.liveRestaurants} ${shown.liveRestaurants === 1 ? 'restaurant' : 'restaurants'} · ${shown.dishes} ${shown.dishes === 1 ? 'dish' : 'dishes'}` : undefined}
         footer={
           <div className="space-y-3">
             {error && <p role="alert" className="font-anek text-[13.5px] text-spice">{error}</p>}

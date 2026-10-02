@@ -15,7 +15,7 @@ INSERT INTO cities (name, slug) VALUES
 -- Restaurants
 CREATE TABLE restaurants (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  city_id uuid REFERENCES cities(id) ON DELETE CASCADE NOT NULL,
+  city_id uuid REFERENCES cities(id) ON DELETE RESTRICT NOT NULL,
   name text NOT NULL,
   address text,
   google_place_id text,
@@ -94,7 +94,9 @@ CREATE POLICY "Testers can update their own reviews" ON reviews
 
 CREATE POLICY "Testers can insert their profile" ON testers
   FOR INSERT TO authenticated
-  WITH CHECK (id = auth.uid());
+  WITH CHECK (id = auth.uid() AND role = 'tester');
+
+-- Role guard trigger (testers_guard_role) and cities write policies: see migrations/010_admin_cities_team.sql
 
 -- ============================================================
 -- Supabase Storage: dish-photos bucket

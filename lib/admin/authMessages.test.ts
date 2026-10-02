@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { loginErrorMessage, loginNotice, resetRequestError, authLinkType } from './authMessages'
+import { loginErrorMessage, loginNotice, resetRequestError, authLinkType, authLinkTokens } from './authMessages'
 
 describe('loginErrorMessage', () => {
   it('explains wrong credentials and the Directus mix-up', () => {
@@ -55,5 +55,18 @@ describe('authLinkType', () => {
     expect(authLinkType('')).toBeNull()
     expect(authLinkType('#section-2')).toBeNull()
     expect(authLinkType('#type=weird')).toBeNull()
+  })
+})
+
+describe('authLinkTokens', () => {
+  it('returns both tokens when present', () => {
+    expect(authLinkTokens('#access_token=a&refresh_token=b&type=invite')).toEqual({ access_token: 'a', refresh_token: 'b' })
+  })
+  it('returns null when a token is missing', () => {
+    expect(authLinkTokens('#access_token=a&type=invite')).toBeNull()
+    expect(authLinkTokens('#refresh_token=b')).toBeNull()
+  })
+  it('returns null for an empty hash', () => {
+    expect(authLinkTokens('')).toBeNull()
   })
 })

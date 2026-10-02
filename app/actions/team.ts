@@ -18,8 +18,15 @@ async function requireAdmin() {
   const { data, error } = await createAdminClient().from('testers').select('role').eq('id', user.id).maybeSingle()
   if (error) throw new Error(error.message)
   if (data?.role !== 'admin') throw new Error('Only admins can manage the team')
+  // A removed admin's token stays valid for up to an hour; the ban is the source of truth.
+  const { data: authData, error: authError } = await createAdminClient().auth.admin.getUserById(user.id)
+  if (authError) throw new Error(authError.message)
+  const bannedUntil = authData.user?.banned_until
+  if (bannedUntil && new Date(bannedUntil).getTime() > Date.now()) throw new Error('Only admins can manage the team')
   return user
 }
+
+const REFUSED = "Couldn't save — the change was refused. Has migration 010 been applied?"
 
 function origin(): string {
   const h = headers()
@@ -34,8 +41,9 @@ export async function updateMyName(name: string) {
   if (trimmed.length > 60) throw new Error('Keep the name under 60 characters')
   const user = await caller()
   const supabase = await createClient()
-  const { error } = await supabase.from('testers').update({ name: trimmed }).eq('id', user.id)
+  const { data, error } = await supabase.from('testers').update({ name: trimmed }).eq('id', user.id).select('id')
   if (error) throw new Error(error.message)
+  if (!data || data.length === 0) throw new Error(REFUSED)
   revalidatePath('/admin/team')
 }
 
@@ -50,6 +58,9 @@ export async function inviteTeammate(email: string) {
   })
   if (error) {
     if (/already (been )?registered|already exists/i.test(error.message)) throw new Error('That email already has an account')
+    if (/not authorized|email address.*not allowed|rate limit/i.test(error.message)) {
+      throw new Error("Supabase couldn't send the invite email. Its built-in email only reaches your Supabase team and a few emails an hour — set up custom SMTP in Supabase → Authentication → Emails.")
+    }
     throw new Error(error.message)
   }
   const { error: profileError } = await admin
@@ -85,8 +96,19 @@ export async function setRole(userId: string, role: 'tester' | 'admin') {
 export async function removeAccess(userId: string) {
   const me = await requireAdmin()
   if (me.id === userId) throw new Error("You can't remove your own access")
-  const { error } = await createAdminClient().auth.admin.updateUserById(userId, { ban_duration: '876000h' })
+  const admin = createAdminClient()
+  const { data: target, error: targetError } = await admin.from('testers').select('role').eq('id', userId).maybeSingle()
+  if (targetError) throw new Error(targetError.message)
+  if (target?.role === 'admin') {
+    const { count, error: countError } = await admin.from('testers').select('id', { count: 'exact', head: true }).eq('role', 'admin')
+    if (countError) throw new Error(countError.message)
+    if (!canDemote(count ?? 0)) throw new Error('The team needs at least one admin')
+  }
+  const { error } = await admin.auth.admin.updateUserById(userId, { ban_duration: '876000h' })
   if (error) throw new Error(error.message)
+  // A removed person must stop counting as an admin (and can't pass requireAdmin if restored by someone else's mistake).
+  const { error: roleError } = await admin.from('testers').update({ role: 'tester' }).eq('id', userId)
+  if (roleError) throw new Error(roleError.message)
   revalidatePath('/admin/team')
 }
 
