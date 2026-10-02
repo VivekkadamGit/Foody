@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Playfair_Display, DM_Sans, Anek_Latin, Barlow_Condensed } from 'next/font/google'
 import './globals.css'
+import RecoveryRedirect from '@/components/RecoveryRedirect'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${playfair.variable} ${dmSans.variable} ${anekLatin.variable} ${barlowCondensed.variable} font-body bg-cream text-charcoal antialiased`}>
+        <RecoveryRedirect />
         {children}
       </body>
     </html>

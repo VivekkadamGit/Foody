@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Button, Field, Input, Chip } from '@/components/admin/ui'
 import { updateRestaurant, softDeleteRestaurant, restoreRestaurant } from '@/app/actions/restaurants'
 
 const CUISINES = ['gujarati', 'street food', 'chinese', 'south indian', 'north indian', 'desserts', 'fast food']
@@ -76,103 +77,66 @@ export default function RestaurantActions({ restaurant }: { restaurant: Restaura
   }
 
   return (
-    <div className="mt-4">
+    <div>
       {restaurant.deleted_at && (
-        <div className="mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between">
-          <p className="text-sm text-red-600 font-medium">⚠ This restaurant is soft-deleted and hidden from the public site.</p>
-          <button
-            onClick={handleRestore}
-            disabled={isPending}
-            className="text-sm text-green-700 font-semibold hover:underline disabled:opacity-50"
-          >
-            Restore
-          </button>
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-spice/40 bg-[#fdf0ea] px-4 py-3">
+          <p className="font-anek text-[14px] font-medium text-spice-dark">⚠ This restaurant is soft-deleted and hidden from the public site.</p>
+          <Button variant="secondary" onClick={handleRestore} disabled={isPending}>Restore</Button>
         </div>
       )}
 
       <div className="flex gap-2">
-        <button
-          onClick={() => setEditing(e => !e)}
-          className="text-sm px-4 py-2 rounded-xl border border-gray-200 hover:border-orange-400 hover:text-orange-600 transition-colors"
-        >
+        <Button variant="secondary" onClick={() => setEditing(e => !e)}>
           {editing ? 'Cancel' : 'Edit Details'}
-        </button>
+        </Button>
         {!restaurant.deleted_at && (
-          <button
-            onClick={handleDelete}
-            disabled={isPending}
-            className="text-sm px-4 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
-          >
-            Delete
-          </button>
+          <Button variant="danger" onClick={handleDelete} disabled={isPending}>Delete</Button>
         )}
       </div>
 
       {editing && (
-        <div className="mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-            <input
+        <div className="mt-4 space-y-4 rounded-2xl border border-warm-200 bg-white p-6">
+          <Field label="Name *">
+            <Input
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-            <input
+          </Field>
+          <Field label="Address">
+            <Input
               value={form.address}
               onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Cuisine Types</label>
+          </Field>
+          <Field label="Cuisine Types">
             <div className="flex flex-wrap gap-2">
               {CUISINES.map(c => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => toggleCuisine(c)}
-                  className={`text-sm px-3 py-1 rounded-full border transition-colors capitalize ${form.cuisine_type.includes(c) ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200'}`}
-                >
-                  {c}
-                </button>
+                <Chip key={c} selected={form.cuisine_type.includes(c)} onClick={() => toggleCuisine(c)}>
+                  {c.replace(/\b\w/g, (ch) => ch.toUpperCase())}
+                </Chip>
               ))}
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+          </Field>
+          <Field label="Price Range">
             <div className="flex gap-2">
               {[['1', '₹ Budget'], ['2', '₹₹ Mid'], ['3', '₹₹₹ Premium']].map(([val, label]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, price_range: Number(val) }))}
-                  className={`text-sm px-4 py-2 rounded-xl border transition-colors ${form.price_range === Number(val) ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200'}`}
-                >
+                <Chip key={val} selected={form.price_range === Number(val)} onClick={() => setForm(f => ({ ...f, price_range: Number(val) }))}>
                   {label}
-                </button>
+                </Chip>
               ))}
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image URL</label>
-            <input
+          </Field>
+          <Field label="Cover Image URL">
+            <Input
               value={form.cover_image_url}
               onChange={e => setForm(f => ({ ...f, cover_image_url: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
               placeholder="https://..."
             />
-          </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            onClick={handleSave}
-            disabled={isPending}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white font-bold py-2.5 rounded-xl transition-colors"
-          >
+          </Field>
+          {error && <p className="font-anek text-sm text-spice">{error}</p>}
+          <Button onClick={handleSave} disabled={isPending} className="w-full">
             {isPending ? 'Saving...' : 'Save Changes'}
-          </button>
+          </Button>
         </div>
       )}
     </div>

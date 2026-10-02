@@ -25,6 +25,14 @@ export type Dish = {
   description: string | null
   photo_url: string | null
   is_must_try: boolean
+  /** 0–10, hand-set. null = not scored yet. */
+  score: number | null
+  diet: string | null
+  category: string | null
+  cuisine: string | null
+  tastes: string[]
+  meals: string[]
+  deleted_at: string | null
   created_at: string
 }
 
@@ -60,4 +68,27 @@ export const PRICE_LABELS: PriceLabel = {
   1: '₹ Budget',
   2: '₹₹ Mid-range',
   3: '₹₹₹ Premium',
+}
+
+export type TrendingDish = {
+  id: string
+  dish_name: string
+  place_name: string
+  city_id: string
+  restaurant_id: string | null
+  area: string | null
+  why: string
+  source_url: string | null
+  photo_url: string | null
+  visited_dish_id: string | null
+  rank: number
+  /** Hand-set 1–3, rendered as 🔥. Orders "On our list". */
+  buzz: number
+  diet: string | null
+  category: string | null
+  cuisine: string | null
+  tastes: string[]
+  meals: string[]
+  created_at: string
+  deleted_at: string | null
 }

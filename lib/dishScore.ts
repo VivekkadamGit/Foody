@@ -1,36 +1,33 @@
-// Quality tier + icon, derived from the real score and review count — a quick visual
-// read ("is this worth it") rather than exposing our own visit/review bookkeeping.
+// Quality tier + icon. The score is set by hand on the dish and the must-try flag is
+// an editorial call — neither is derived from how many times a dish has been visited.
+// One visit, one judgement, edited if it changes.
 
-export type QualityTier = 'top' | 'mid' | 'new'
+export type QualityTier = 'must_try' | 'rated' | 'unrated'
 
-export function qualityTier(score: number, reviewCount: number): QualityTier {
-  if (reviewCount <= 1) return 'new'
-  return score >= 9.0 ? 'top' : 'mid'
+export function qualityTier(score: number | null, isMustTry: boolean): QualityTier {
+  if (isMustTry) return 'must_try'
+  return score === null ? 'unrated' : 'rated'
 }
 
 export function qualityIcon(tier: QualityTier): string {
-  return tier === 'top' ? '🏅' : tier === 'new' ? '🌱' : '⭐'
+  return tier === 'must_try' ? '🏅' : tier === 'unrated' ? '🌱' : '⭐'
 }
 
 export function qualityLabel(tier: QualityTier): string {
-  return tier === 'top' ? 'Certified' : tier === 'new' ? 'New' : 'Rated'
+  return tier === 'must_try' ? 'Must try' : tier === 'unrated' ? 'Not rated yet' : 'Rated'
 }
 
 // Explained legend for the quality filter — icon + name + a one-line rule, so
 // people don't have to guess what a badge means (à la Rotten Tomatoes' Tomatometer filter).
 export const QUALITY_LEGEND: { tier: QualityTier; icon: string; label: string; description: string }[] = [
-  { tier: 'top', icon: '🏅', label: 'Certified', description: '9.0+ score — the best of the best.' },
-  { tier: 'mid', icon: '⭐', label: 'Rated', description: 'Tasted more than once, holding steady.' },
-  { tier: 'new', icon: '🌱', label: 'New', description: 'Just added — first taste, score is provisional.' },
+  { tier: 'must_try', icon: '🏅', label: 'Must try', description: 'Worth going out of your way for.' },
+  { tier: 'rated', icon: '⭐', label: 'Rated', description: 'Tasted and scored.' },
+  { tier: 'unrated', icon: '🌱', label: 'Not rated yet', description: 'On the list, not tasted yet.' },
 ]
 
-export function scoreOutOf10(avgRatingOutOf5: number): number {
-  return Math.round(avgRatingOutOf5 * 2 * 10) / 10
-}
-
-export function avgRating(ratings: number[]): number {
-  if (ratings.length === 0) return 0
-  return ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+/** Formats a dish score for display, or a dash when it has not been scored. */
+export function formatScore(score: number | null): string {
+  return score === null ? '—' : score.toFixed(1)
 }
 
 export function priceTierSymbol(priceRange: number | null | undefined): string {

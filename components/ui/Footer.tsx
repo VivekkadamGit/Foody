@@ -36,7 +36,7 @@ export default function Footer({ cities }: { cities?: City[] }) {
         {/* Brand */}
         <div>
           <p className="font-body text-sm text-muted leading-relaxed max-w-xs">
-            Every restaurant visited in person. Every dish personally tasted and rated — zero sponsored content, ever.
+            Every restaurant visited in person. Every score earned firsthand — zero sponsored content, ever.
           </p>
           <div className="flex gap-3 mt-5">
             {[

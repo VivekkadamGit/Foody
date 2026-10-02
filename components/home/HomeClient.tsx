@@ -6,6 +6,8 @@ import Link from 'next/link'
 import MustTryRanking, { RankedDish } from './MustTryRanking'
 import QualityBadge from './QualityBadge'
 import CitiesGrid from './CitiesGrid'
+import type { SearchResponse } from '@/lib/search/types'
+import { previewDishes, summaryLine } from '@/lib/search/present'
 
 export type CityBundle = {
   city: { name: string; slug: string }
@@ -33,6 +35,9 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
   const [activeSlug, setActiveSlug] = useState(bundles[0]?.city.slug ?? '')
   const [query, setQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
+  const [results, setResults] = useState<SearchResponse | null>(null)
+  const [searching, setSearching] = useState(false)
+  const [searchFailed, setSearchFailed] = useState(false)
   const [words, setWords] = useState<FloatingWord[]>([])
   const wordId = useRef(0)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -150,15 +155,53 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Debounced, abortable search against the database. Replaces the old in-memory filter,
+  // which could only ever see dishes that already had reviews.
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2 || !activeSlug) {
+      setResults(null)
+      setSearching(false)
+      setSearchFailed(false)
+      return
+    }
+
+    setSearching(true)
+    const controller = new AbortController()
+    const handle = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/search?q=${encodeURIComponent(q)}&city=${encodeURIComponent(activeSlug)}`,
+          { signal: controller.signal }
+        )
+        if (!res.ok) throw new Error(`search failed: ${res.status}`)
+        setResults(await res.json())
+        setSearchFailed(false)
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
+        setSearchFailed(true)
+        setResults(null)
+      } finally {
+        setSearching(false)
+      }
+    }, 180)
+
+    return () => {
+      clearTimeout(handle)
+      controller.abort()
+    }
+  }, [query, activeSlug])
+
   if (!active) return null
 
-  const matches = query.trim()
-    ? active.ranking.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 5)
-    : []
+  const preview = results ? previewDishes(results) : []
+  const previewRestaurants = results?.restaurants.slice(0, 3) ?? []
+  const hasResults = preview.length > 0 || previewRestaurants.length > 0 || (results?.onOurList.length ?? 0) > 0
+  const searchHref = `/search?q=${encodeURIComponent(query.trim())}&city=${encodeURIComponent(active.city.slug)}`
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    router.push(`/${active.city.slug}${query ? `?q=${encodeURIComponent(query)}` : ''}`)
+    router.push(query.trim() ? searchHref : `/search?city=${encodeURIComponent(active.city.slug)}`)
   }
 
   const popularTags = active.ranking.slice(0, 4).map((d) => d.name)
@@ -249,46 +292,115 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
               </button>
             </div>
 
-            {matches.length > 0 && (
-              <div className="bg-white border-t border-[#ede8e1]">
-                {matches.map((d, i) => (
+            {query.trim().length >= 2 && (
+              <div className="bg-white border-t border-[#ede8e1] max-h-[340px] overflow-y-auto">
+                {searchFailed && (
+                  <p className="px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0">
+                    Search is unavailable right now.
+                  </p>
+                )}
+
+                {!searchFailed && searching && !hasResults && (
+                  <p className="px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0">Searching…</p>
+                )}
+
+                {!searchFailed && results && hasResults && (
                   <Link
-                    key={d.id}
-                    href={`/${active.city.slug}?q=${encodeURIComponent(d.name)}`}
-                    className={`flex items-center gap-3.5 px-5 py-3 ${i % 2 === 1 ? 'bg-[#fdf6f2]' : ''} ${i > 0 ? 'border-t border-[#f2ede6]' : ''}`}
+                    href={searchHref}
+                    className="flex items-center justify-between px-5 py-2.5 bg-[#fdf6f2] font-anek text-[13px] text-ember font-semibold hover:bg-[#fbeee6] transition-colors"
                   >
-                    <div
-                      className="w-10 h-10 rounded-md flex-shrink-0"
-                      style={{ background: 'repeating-linear-gradient(135deg,#ece7dd 0 7px,#e2dcd1 7px 14px)' }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-anek text-[15px] font-semibold text-[#1c1611] truncate m-0">{d.name}</p>
-                      <p className="font-anek text-[12.5px] text-sand-dark truncate m-0">
-                        Best at {d.restaurantName} · {d.priceSymbol}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2.5 flex-shrink-0">
-                      <QualityBadge score={d.score} reviewCount={d.reviewCount} size="sm" dark={false} />
-                      <span className="font-barlow text-2xl font-bold text-[#1c1611]">{d.score.toFixed(1)}</span>
-                    </div>
+                    <span>{summaryLine(results)}</span>
+                    <span>See all →</span>
                   </Link>
-                ))}
+                )}
+
+                {!searchFailed && !searching && !hasResults && (
+                  <Link href={searchHref} className="block px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0 hover:text-ember">
+                    Nothing rated matches &ldquo;{query.trim()}&rdquo; in {active.city.name} yet — see the city&apos;s best →
+                  </Link>
+                )}
+
+                {preview.length > 0 && (
+                  <>
+                    <p className="px-5 pt-3 pb-1 font-anek text-[10px] font-bold uppercase tracking-[0.15em] text-[#a09a90] m-0">
+                      Dishes
+                    </p>
+                    {preview.map((d) => (
+                      <Link
+                        key={d.id}
+                        href={`/${active.city.slug}/${d.restaurantId}`}
+                        className="flex items-center gap-3.5 px-5 py-3 border-t border-[#f2ede6] hover:bg-[#fdf6f2] transition-colors"
+                      >
+                        <div
+                          className="w-10 h-10 rounded-md flex-shrink-0"
+                          style={{ background: 'repeating-linear-gradient(135deg,#ece7dd 0 7px,#e2dcd1 7px 14px)' }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-anek text-[15px] font-semibold text-[#1c1611] truncate m-0">{d.name}</p>
+                          <p className="font-anek text-[12.5px] text-sand-dark truncate m-0">
+                            {d.restaurantName}
+                            {d.area ? `, ${d.area}` : ''} · {d.priceSymbol}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2.5 flex-shrink-0">
+                          {d.score === null ? (
+                            <span className="font-anek text-[11px] text-[#a09a90] whitespace-nowrap">Not rated yet</span>
+                          ) : (
+                            <>
+                              <QualityBadge score={d.score} isMustTry={d.isMustTry} size="sm" dark={false} />
+                              <span className="font-barlow text-2xl font-bold text-[#1c1611]">{d.score.toFixed(1)}</span>
+                            </>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
+
+                {previewRestaurants.length > 0 && (
+                  <>
+                    <p className="px-5 pt-3 pb-1 font-anek text-[10px] font-bold uppercase tracking-[0.15em] text-[#a09a90] m-0 border-t border-[#ede8e1]">
+                      Restaurants
+                    </p>
+                    {previewRestaurants.map((r) => (
+                      <Link
+                        key={r.id}
+                        href={`/${active.city.slug}/${r.id}`}
+                        className="flex items-center gap-3.5 px-5 py-3 border-t border-[#f2ede6] hover:bg-[#fdf6f2] transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-anek text-[15px] font-semibold text-[#1c1611] truncate m-0">{r.name}</p>
+                          <p className="font-anek text-[12.5px] text-sand-dark truncate m-0">
+                            {r.area ? `${r.area} · ` : ''}
+                            {r.dishCount} {r.dishCount === 1 ? 'dish' : 'dishes'} · {r.priceSymbol}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
               </div>
             )}
 
             <div className="flex items-center justify-between px-5 py-3 bg-[#fdfbf8] border-t border-[#ede8e1] flex-wrap gap-2">
               <div className="flex items-center gap-3.5 font-anek text-[13.5px] flex-wrap">
-                <span className="text-sand-dark">Popular:</span>
-                {popularTags.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => setQuery(name)}
-                    className="text-ember hover:text-ember-light transition-colors font-medium"
-                  >
-                    {name}
-                  </button>
-                ))}
+                {popularTags.length > 0 ? (
+                  <>
+                    <span className="text-sand-dark">Popular:</span>
+                    {popularTags.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => setQuery(name)}
+                        className="text-ember hover:text-ember-light transition-colors font-medium"
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <span className="text-sand-dark">No dishes rated here yet</span>
+                )}
               </div>
               <span className="font-anek text-[12.5px] text-[#a09a90]">{active.city.name}</span>
             </div>
