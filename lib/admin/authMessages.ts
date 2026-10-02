@@ -21,3 +21,20 @@ export function loginNotice(params: { reset?: string; error?: string }): { tone:
   }
   return null
 }
+
+/**
+ * Message for a failed reset-email request, or null when it should look like success
+ * (no error, or the account simply doesn't exist: never reveal which emails are real).
+ */
+export function resetRequestError(err: { message?: string; status?: number } | null | undefined): string | null {
+  if (!err) return null
+  const m = err.message ?? ''
+  if (/user not found|not found/i.test(m)) return null
+  if (err.status === 429 || /rate limit|security purposes/i.test(m)) {
+    return 'Too many reset requests — wait a minute and try again.'
+  }
+  if (/failed to fetch|network/i.test(m)) {
+    return "Can't reach the login server. Check your connection and try again."
+  }
+  return `Couldn't send the reset email (${m}). If this keeps happening, reset the password in Supabase → Authentication → Users.`
+}

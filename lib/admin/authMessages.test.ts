@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { loginErrorMessage, loginNotice } from './authMessages'
+import { loginErrorMessage, loginNotice, resetRequestError } from './authMessages'
 
 describe('loginErrorMessage', () => {
   it('explains wrong credentials and the Directus mix-up', () => {
@@ -24,5 +24,24 @@ describe('loginNotice', () => {
     expect(loginNotice({ reset: 'sent' })).toEqual({ tone: 'info', text: 'Check your inbox for a reset link.' })
     expect(loginNotice({ error: 'link' })?.tone).toBe('error')
     expect(loginNotice({})).toBeNull()
+  })
+})
+
+describe('resetRequestError', () => {
+  it('is null with no error or an unknown account', () => {
+    expect(resetRequestError(null)).toBeNull()
+    expect(resetRequestError({ message: 'User not found' })).toBeNull()
+  })
+  it('explains rate limits', () => {
+    expect(resetRequestError({ message: 'x', status: 429 })).toContain('Too many')
+    expect(resetRequestError({ message: 'For security purposes, you can only request this after 20 seconds' })).toContain('Too many')
+  })
+  it('explains network failures', () => {
+    expect(resetRequestError({ message: 'Failed to fetch' })).toContain("Can't reach")
+  })
+  it('surfaces other failures with the raw message', () => {
+    const m = resetRequestError({ message: 'Error sending recovery email' })
+    expect(m).toContain('Error sending recovery email')
+    expect(m).toContain('Supabase')
   })
 })

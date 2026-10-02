@@ -37,7 +37,7 @@ export default function LoginForm({ notice }: { notice: { tone: 'info' | 'error'
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       {notice && (
-        <p role="status" className={`rounded-lg border px-4 py-3 font-anek text-[14px] ${
+        <p role={notice.tone === 'error' ? 'alert' : 'status'} className={`rounded-lg border px-4 py-3 font-anek text-[14px] ${
           notice.tone === 'error' ? 'border-[#f2c9bb] bg-[#fdf0ea] text-spice-dark' : 'border-[#bfe6d2] bg-[#eaf7f0] text-[#1f7a52]'
         }`}>
           {notice.text}

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import AuthLayout from '@/components/admin/AuthLayout'
 import { Button, Field, Input } from '@/components/admin/ui'
+import { resetRequestError } from '@/lib/admin/authMessages'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -20,10 +21,11 @@ export default function ForgotPasswordPage() {
       redirectTo: `${window.location.origin}/auth/callback?next=/admin/reset-password`,
     })
     setLoading(false)
-    // Never reveal whether the account exists: same message either way, except for
-    // errors that are clearly not about the account (rate limits, network).
-    if (error && !/not found|user/i.test(error.message)) {
-      setError(error.message)
+    // Unknown accounts look like success (never reveal who exists); real failures surface.
+    const message = resetRequestError(error)
+    if (error) console.error('[auth] reset request failed:', error)
+    if (message) {
+      setError(message)
       return
     }
     setSent(true)

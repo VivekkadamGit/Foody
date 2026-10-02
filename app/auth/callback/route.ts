@@ -10,7 +10,10 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
   const nextParam = url.searchParams.get('next') ?? '/admin'
-  const next = nextParam.startsWith('/admin/') || nextParam === '/admin' ? nextParam : '/admin'
+  const next = nextParam === '/admin' ||
+    (nextParam.startsWith('/admin/') && !/\.\.|\\|\/\//.test(nextParam))
+      ? nextParam
+      : '/admin'
 
   if (code) {
     const supabase = await createClient()
