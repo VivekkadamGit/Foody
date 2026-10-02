@@ -36,12 +36,14 @@ export default function RecoveryRedirect() {
     })
 
     if ((linkType === 'invite' || linkType === 'recovery') && tokens) {
+      // Strip the tokens from the address bar first: they're already parsed, and doing it
+      // before setSession means it can't race the router.replace the SIGNED_IN listener issues.
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
       supabase.auth.setSession(tokens).then(({ error }) => {
         if (error) {
           console.error('[auth] could not start session from link:', error.message)
           router.replace('/admin/login?error=link')
         }
-        window.history.replaceState(null, '', window.location.pathname + window.location.search)
       })
     }
     return () => subscription.unsubscribe()
