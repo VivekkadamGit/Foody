@@ -54,6 +54,10 @@ export default function ResetPasswordPage() {
           </Link>
         )}
         <Button type="submit" loading={loading} className="w-full py-3">Save password</Button>
+        {/* Rendered outside the admin shell, so give a way back without changing anything. */}
+        <Link href="/admin" className="block text-center font-anek text-[14px] font-medium text-muted hover:text-charcoal">
+          ← Back to admin
+        </Link>
       </form>
     </AuthLayout>
   )

@@ -60,6 +60,9 @@ export default function AdminShell({ email, children }: { email: string | null; 
       <div className="mt-auto space-y-1 border-t border-white/[0.08] pt-4">
         <Link href="/" target="_blank" className="block rounded-lg px-3 py-2 font-anek text-[14px] hover:text-[#fdf9f4]">View site ↗</Link>
         {email && <p className="truncate px-3 font-anek text-[12px] text-sand-darker" title={email}>{email}</p>}
+        <Link href="/admin/reset-password" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 font-anek text-[14px] hover:text-[#fdf9f4]">
+          Change password
+        </Link>
         <button type="button" onClick={signOut} className="w-full rounded-lg px-3 py-2 text-left font-anek text-[14px] hover:text-ember-light">
           Sign out
         </button>
