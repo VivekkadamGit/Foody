@@ -1,7 +1,7 @@
 import type { CategoryLeaf, ParsedQuery } from '@/lib/taxonomy'
 
 /** How a query is answered. See docs/superpowers/specs/2026-09-30-smart-search-design.md §2.1 */
-export type SearchKind = 'specific' | 'meal' | 'broad' | 'text'
+export type SearchKind = 'specific' | 'meal' | 'broad' | 'text' | 'ai'
 
 export type DishHit = {
   kind: 'dish'
@@ -57,6 +57,14 @@ export type SearchResponse = {
   restaurants: RestaurantHit[]
   /** Nothing rated matched; `board` is included as a suggestion. */
   empty?: boolean
+  /** ai: how the request was understood, shown as "Showing" chips. */
+  showing?: string[]
+  /** ai + empty: what was asked for, as in "We haven't tasted sushi in Surat yet". */
+  missing?: string
+  /** ai + empty: nearest dishes we have tried in this city. */
+  closest?: DishHit[]
+  /** ai + empty: other live cities where we have tried it. */
+  otherCities?: { slug: string; name: string }[]
 }
 
 /** Filter chips carried as URL params on /search, on top of the typed query. */
