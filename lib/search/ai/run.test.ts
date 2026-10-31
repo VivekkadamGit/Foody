@@ -73,6 +73,25 @@ describe('runAiSearch', () => {
     expect(deps.match).not.toHaveBeenCalled()
   })
 
+  it('candidate query failure -> runSearch result, not an error', async () => {
+    c.fetchCandidates.mockRejectedValue(new Error('candidates failed: bad embed'))
+    expect(await run('sweet')).toBe(keywordHit)
+    expect(deps.match).not.toHaveBeenCalled()
+  })
+
+  it('the match cache key changes when the city gains a dish', async () => {
+    await run('sweet')
+    c.fetchCandidates.mockResolvedValue([cand('a', { score: 7 }), cand('b', { score: 9 }), cand('new')])
+    await run('sweet')
+    expect(deps.match.mock.calls[0][2]).not.toBe(deps.match.mock.calls[1][2])
+  })
+
+  it('the match cache key is stable for the same dishes', async () => {
+    await run('sweet')
+    await run('sweet')
+    expect(deps.match.mock.calls[0][2]).toBe(deps.match.mock.calls[1][2])
+  })
+
   it('match rejects -> runSearch result', async () => {
     deps.match.mockRejectedValue(new Error('timeout'))
     expect(await run('sweet')).toBe(keywordHit)

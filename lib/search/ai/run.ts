@@ -34,11 +34,18 @@ export async function runAiSearch(
   q = q.slice(0, 100).trim()
   if (!q || !aiSearchEnabled()) return runSearch(sb, q, city, chips)
 
-  const cands = filterByChips(await fetchCandidates(sb, city), chips)
+  let cands: Candidate[]
+  try {
+    cands = filterByChips(await fetchCandidates(sb, city), chips)
+  } catch (err) {
+    console.error('[search] ai candidates failed:', err)
+    return runSearch(sb, q, city, chips)
+  }
   if (cands.length === 0) return runSearch(sb, q, city, chips)
 
   const filters = applyChips(parseQuery(q), chips)
-  const key = aiCacheKey(q, city, chips)
+  // The dish ids are part of the key, so a dish added in the admin shows up on the next search.
+  const key = `${aiCacheKey(q, city, chips)}|${fingerprint(cands)}`
 
   const restaurantsP: Promise<RestaurantHit[]> = fetchFuzzy(sb, city, stripFiller(q) || q)
     .then((r) => r.restaurants)
@@ -76,6 +83,15 @@ export async function runAiSearch(
     res.board = await fetchBoard(sb, city)
   }
   return res
+}
+
+/** Short, stable digest of which dishes the AI was shown. */
+function fingerprint(cands: Candidate[]): string {
+  let h = 0
+  for (const id of cands.map((c) => c.id).sort()) {
+    for (let i = 0; i < id.length; i++) h = (Math.imul(h, 31) + id.charCodeAt(i)) | 0
+  }
+  return `${cands.length}.${(h >>> 0).toString(36)}`
 }
 
 /** "We've tried it in Vadodara" — best effort; any failure just leaves the line out. */
