@@ -9,6 +9,11 @@ const MAX_CLOSEST = 3
 const MAX_SHOWING = 4
 const MAX_LABEL = 40
 
+// Gemini sometimes describes the request ("unclear request") instead of returning null;
+// that would read "We haven't tasted unclear request…", so the page uses the typed words.
+const NOT_FOOD = /\b(unclear|unknown|unsure|not sure|unrecogni[sz]ed|nonsense|gibberish|random|n\/a|none|null|request|query|input)\b/i
+const TOO_VAGUE = /^(food|foods|dish|dishes|items?|something|anything|meal|meals)$/i
+
 function toDish({ diet, tastes, meals, notes, citySlug, cityName, ...dish }: Candidate): DishHit {
   return dish
 }
@@ -38,7 +43,8 @@ export function resolveMatch(raw: unknown, cands: Candidate[]): MatchResult {
     .filter((s): s is string => typeof s === 'string' && s.trim() !== '')
     .map((s) => s.trim().slice(0, MAX_LABEL))
     .slice(0, MAX_SHOWING)
-  const missing = typeof r.missing === 'string' && r.missing.trim() ? r.missing.trim() : null
+  const said = typeof r.missing === 'string' ? r.missing.trim() : ''
+  const missing = said && !NOT_FOOD.test(said) && !TOO_VAGUE.test(said) ? said : null
 
   return { ranked, showing, missing, closest }
 }

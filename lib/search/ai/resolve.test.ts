@@ -55,6 +55,17 @@ describe('resolveMatch', () => {
     expect(resolveMatch({ ids: [], missing: 3 }, ab).missing).toBeNull()
   })
 
+  it.each(['unclear request', 'Unknown', 'not sure', 'gibberish', 'N/A', 'null', 'unclear query', 'dishes', 'Food', 'something'])(
+    'drops a "missing" that describes the request instead of naming food: %s',
+    (m) => {
+      expect(resolveMatch({ ids: [], missing: m }, ab).missing).toBeNull()
+    }
+  )
+
+  it.each(['chai time snacks', 'healthy breakfast', 'sushi', 'Chinese food'])('keeps a real food phrase: %s', (m) => {
+    expect(resolveMatch({ ids: [], missing: m }, ab).missing).toBe(m)
+  })
+
   it.each([['a string', 'nope'], ['null', null], ['missing ids', { showing: [] }], ['ids not an array', { ids: 'a' }]])(
     'throws bad_ai_output on %s',
     (_label, raw) => {
