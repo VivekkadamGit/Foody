@@ -35,9 +35,11 @@ Two independent services sharing one Supabase Postgres database:
 
 **Server Actions** in `app/actions/` handle all admin mutations (update, softDelete, restore) and call `revalidatePath` to refresh the page. Client components (`*Actions.tsx`) call these server actions via `useTransition`.
 
-**AI Suggest** — `app/api/suggest/route.ts` fetches all reviewed dishes from Supabase, builds a context string, and calls Gemini 1.5 Flash to return a single best-match dish recommendation.
+**AI Suggest** — `app/api/suggest/route.ts` fetches all reviewed dishes from Supabase, builds a context string, and calls Gemini (model set once in `lib/ai/gemini.ts`, via the Interactions API — `generateContent` hangs or 404s for current models on our key) to return a single best-match dish recommendation.
 
 **Search** — `lib/search/`. `parseQuery` (`lib/taxonomy.ts`) extracts tags; `classifyQuery` picks a kind: `specific` (ranked by `dishes.score`), `meal` (grouped Thali / by cuisine), `broad` (City's Best: top dish per category), `text` (typo-tolerant via the `search_fuzzy` SQL function, migration 008). `runSearch` is the single entry point, used by `/api/search` (hero dropdown) and the `/search` page. Viral entries from `trending_dishes` show separately as "On our list · visiting soon" (ordered by `buzz`), never ranked with rated dishes. Pure logic is unit tested: `npm test`. Design: `docs/superpowers/specs/2026-09-30-smart-search-design.md`. Viral entries only match tag/meal searches once their category/meals/diet tags are set (e.g. in Directus).
+
+**AI Search** — `lib/search/ai/`. The `/search` page calls `runAiSearch`: it loads every live dish in the city (with review taste notes), applies the diet/taste/meal chips, and asks Gemini which dish ids fit the request in any wording ("top class food", "kuch meetha khana hai"). Ids are validated against the real dishes (the AI can never add one) and ordered by `dishes.score`. "Best" = Must-try or praised in notes. Nothing found → honest "We haven't tasted X in City yet" with closest dishes, other cities, On our list, then City's Best. Any AI failure (10s timeout, bad JSON) falls back to keyword `runSearch`. Answers are cached for an hour (`lib/search/ai/deps.ts`). The hero dropdown stays keyword-only (no AI per keystroke). Set `AI_SEARCH=off` to switch it off. Design: `docs/superpowers/specs/2026-10-31-ai-search-design.md`.
 
 ### Supabase Client Pattern
 
@@ -114,7 +116,8 @@ Required in `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — public anon key
 - `SUPABASE_SERVICE_ROLE_KEY` — secret key (server-only, used in API routes)
-- `GEMINI_API_KEY` — Google Gemini API key for AI suggest feature
+- `GEMINI_API_KEY` — Google Gemini API key for AI suggest and AI search
+- `AI_SEARCH` — optional; `off` makes `/search` use keyword search only
 - `DATABASE_URL` — Supabase session pooler connection string (for running migrations)
 
 Image uploads use Supabase Storage and need no extra token beyond the keys above.

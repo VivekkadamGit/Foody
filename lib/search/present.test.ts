@@ -53,6 +53,16 @@ describe('chipHref', () => {
 })
 
 describe('headingFor', () => {
+  it('ai uses the typed query', () => {
+    expect(headingFor(response({ kind: 'ai' }), 'top class food', 'Surat')).toBe('Top class food in Surat')
+  })
+
+  it('ai empty is the honest line', () => {
+    expect(headingFor(response({ kind: 'ai', empty: true, missing: 'sushi' }), 'sushi please', 'Surat')).toBe(
+      "We haven't tasted sushi in Surat yet"
+    )
+  })
+
   it('names each kind', () => {
     expect(headingFor(response({ kind: 'specific' }), 'best cake', 'Surat')).toBe('Best cake in Surat')
     expect(headingFor(response({ kind: 'specific' }), '', 'Surat')).toBe('Top picks in Surat')

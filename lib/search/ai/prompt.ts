@@ -37,7 +37,7 @@ Reply with JSON only:
 {
   "ids": [up to 10 ids that genuinely fit],
   "showing": [up to 4 short labels, a few words each, describing how you understood the request, e.g. "Must-try or praised in reviews", "Light", "Sweet"],
-  "missing": if "ids" is empty, a short noun phrase for what they asked for (e.g. "sushi"), otherwise null,
+  "missing": if "ids" is empty, a short noun phrase for what they asked for (e.g. "sushi"); null if "ids" is not empty or you can't tell what they want,
   "closest": if "ids" is empty, up to 3 ids that come reasonably close, otherwise []
 }`
 }

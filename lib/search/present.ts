@@ -69,6 +69,9 @@ export function headingFor(res: SearchResponse, q: string, cityName: string): st
     }
     case 'specific':
       return typed ? `${capitalize(typed)} in ${cityName}` : `Top picks in ${cityName}`
+    case 'ai':
+      if (res.empty) return `We haven't tasted ${res.missing ?? typed} in ${cityName} yet`
+      return typed ? `${capitalize(typed)} in ${cityName}` : `Top picks in ${cityName}`
   }
 }
 
