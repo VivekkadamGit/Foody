@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 
-/** "Chakh" written in each script, phonetically. */
-const WORDS = ['चख', 'ચાખ', 'চাখ', 'ਚੱਖ', 'சக்', 'చఖ్', 'ಚಖ್', 'ചഖ്', 'چکھ', 'चाख', 'Chakh']
+/** "Chakh" written in each script, phonetically. Hindi, Gujarati, Marathi and English lead. */
+const WORDS = ['चख', 'ચાખ', 'चाख', 'Chakh', 'চাখ', 'ਚੱਖ', 'சக்', 'చఖ్', 'ಚಖ್', 'ചഖ్', 'چکھ']
 
 const EVERY_MS = 260
 const DURATION_MS = 700
