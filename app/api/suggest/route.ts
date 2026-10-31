@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { createClient } from '@supabase/supabase-js'
+import { generateJson } from '@/lib/ai/gemini'
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,19 +62,12 @@ Reply in this exact JSON format (no markdown, no extra text):
 
 If nothing matches well, set dish to null and explain in reason why nothing fits.`
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-    const result = await model.generateContent(prompt)
-    const text = result.response.text().trim()
-
-    // Strip markdown code fences if Gemini wraps in ```json
-    const cleaned = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '')
-
-    let parsed: any = {}
+    let parsed: any
     try {
-      parsed = JSON.parse(cleaned)
-    } catch {
-      return NextResponse.json({ suggestion: text, restaurant: null, link: null })
+      parsed = await generateJson(prompt)
+    } catch (err) {
+      console.error('Suggest AI error:', err)
+      return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
     }
 
     const matchedDish: any = dishes.find((d: any) =>
