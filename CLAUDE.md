@@ -66,7 +66,7 @@ Directus auto-discovers the existing Postgres schema. After running a DB migrati
 
 The Next.js app deploys to **Vercel** (Hobby free plan). Each branch gets a preview deployment automatically. Production is the `master` branch.
 
-**AWS** — `.github/workflows/deploy-aws.yml` also deploys `master` to AWS: CloudFront serves `/_next/static/*` and `/brand/*` from S3 and forwards everything else to the Next.js standalone server (`Dockerfile`) on ECS Fargate Spot (0.25 vCPU / 0.5 GB, the cheapest option) in `ap-southeast-2`, next to the Supabase database. Infrastructure is CloudFormation in `infra/aws/` (`bootstrap.yml` once by hand, `app.yml` by the workflow). Setup, costs and the region reasoning: `docs/deploy/aws.md`.
+**AWS** — an on-demand environment managed with Terraform in `terraform/` (`up.sh` creates it and deploys `master`, `down.sh` removes everything). CloudFront serves `/_next/static/*` and `/brand/*` from S3 and forwards everything else to the Next.js standalone server (`Dockerfile`) on ECS Fargate Spot (0.25 vCPU / 0.5 GB) in `ap-southeast-2`, next to the Supabase database. The site is https://chakh.in (ACM certificate + Route 53 records in `terraform/dns.tf`; the hosted zone itself stays outside Terraform). Terraform owns all infrastructure, including the ECS task definition (it runs the `latest` image); `.github/workflows/deploy-aws.yml` only ships code on every push to `master` (pushes the image as `latest`, uploads static files, forces an ECS rollout) and skips the deploy while the environment is down. Costs, region reasoning and setup: `docs/deploy/aws.md`, `terraform/README.md`.
 
 ## Admin password reset (one-time Supabase setup)
 
