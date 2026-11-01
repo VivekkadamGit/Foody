@@ -66,6 +66,8 @@ Directus auto-discovers the existing Postgres schema. After running a DB migrati
 
 The Next.js app deploys to **Vercel** (Hobby free plan). Each branch gets a preview deployment automatically. Production is the `master` branch.
 
+**AWS** — `.github/workflows/deploy-aws.yml` also deploys `master` to AWS: CloudFront serves `/_next/static/*` and `/brand/*` from S3 and forwards everything else to the Next.js standalone server (`Dockerfile`) on ECS Fargate in `ap-southeast-2`, next to the Supabase database. Infrastructure is CloudFormation in `infra/aws/` (`bootstrap.yml` once by hand, `app.yml` by the workflow). Setup, costs and the region reasoning: `docs/deploy/aws.md`.
+
 ## Admin password reset (one-time Supabase setup)
 
 `/admin/forgot-password` emails a Supabase reset link that lands on `/auth/callback`, then `/admin/reset-password`. Supabase only redirects to allow-listed URLs: in the Supabase dashboard → **Authentication → URL Configuration → Redirect URLs**, add `http://localhost:3000/auth/callback` and `https://<your-vercel-domain>/auth/callback`. If reset links fail on Vercel preview deployments, add a wildcard entry such as `https://*-<your-project>.vercel.app/**`. New admin accounts are created in **Authentication → Users → Add user** (tick Auto Confirm). Add `…/admin/reset-password` to the same Redirect URLs list — team invites land there. Supabase's built-in email only delivers to your Supabase org members (a few per hour) — configure custom SMTP (Authentication → Emails) before inviting teammates.
