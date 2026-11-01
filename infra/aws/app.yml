@@ -28,12 +28,20 @@ Parameters:
     Type: String
     Default: 'on'
     AllowedValues: ['on', 'off']
+  # Cheapest Fargate size. 512 / 1024 if the server runs short of memory (see the logs).
   TaskCpu:
     Type: String
-    Default: '512'
+    Default: '256'
   TaskMemory:
     Type: String
-    Default: '1024'
+    Default: '512'
+  CapacityProvider:
+    Type: String
+    Default: FARGATE_SPOT
+    AllowedValues: [FARGATE_SPOT, FARGATE]
+    Description: >
+      FARGATE_SPOT is ~70% cheaper, but AWS can reclaim the task with two minutes' notice;
+      ECS starts a replacement, so the site can be down for a minute or two. FARGATE never is.
   TaskCount:
     Type: Number
     Default: 1
@@ -164,7 +172,9 @@ Resources:
     Properties: { LogGroupName: /ecs/chakh, RetentionInDays: 14 }
   Cluster:
     Type: AWS::ECS::Cluster
-    Properties: { ClusterName: chakh }
+    Properties:
+      ClusterName: chakh
+      CapacityProviders: [FARGATE, FARGATE_SPOT]
   ExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -215,7 +225,8 @@ Resources:
     Properties:
       ServiceName: chakh-web
       Cluster: !Ref Cluster
-      LaunchType: FARGATE
+      CapacityProviderStrategy:
+        - { CapacityProvider: !Ref CapacityProvider, Weight: 1 }
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: !Ref TaskCount
       HealthCheckGracePeriodSeconds: 30

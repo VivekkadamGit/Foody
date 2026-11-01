@@ -41,10 +41,18 @@ starts (a sleeping Lambda adds 1–3 s to the first search), and the one-hour se
 and admin "save → page refreshes" work as they do today. One server is enough for now;
 running two would need a shared cache first.
 
-**Rough monthly cost (Sydney):** Fargate 0.5 vCPU / 1 GB ≈ $18, load balancer ≈ $20,
-public IPv4 addresses ≈ $11, CloudFront / S3 / ECR / logs ≈ $1–3 at current traffic
-(CloudFront's free tier covers 1 TB and 10 M requests a month). About **$50 a month**,
-versus $0 on Vercel Hobby.
+**The server is the cheapest Fargate option:** the smallest size (0.25 vCPU, 0.5 GB) on
+Fargate Spot, about 70% below normal Fargate. The catch: AWS can take a Spot task back with
+two minutes' notice. ECS starts a replacement, so the site can be down for a minute or two
+when that happens. Set the stack parameter `CapacityProvider=FARGATE` to rule that out
+(≈ $11 a month instead of ≈ $3). If the logs show the server running out of memory, raise
+`TaskCpu`/`TaskMemory` to `512`/`1024`. (Graviton/ARM is cheaper than normal Fargate too, but
+Fargate Spot doesn't run ARM, and Spot is the bigger saving.)
+
+**Rough monthly cost (Sydney):** Fargate Spot ≈ $3, load balancer ≈ $20, public IPv4
+addresses ≈ $11, CloudFront / S3 / ECR / logs ≈ $1–3 at current traffic (CloudFront's free
+tier covers 1 TB and 10 M requests a month). About **$35 a month**, versus $0 on Vercel
+Hobby. Most of it is the load balancer and its addresses, not the server.
 
 ## Files
 
