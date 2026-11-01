@@ -1,6 +1,8 @@
 # Deploys Chakh to AWS on every push to master (or by hand from the Actions tab).
+# The AWS environment itself is created and removed with Terraform (terraform/README.md);
+# while it is down, this workflow tests and then skips the deploy.
 # Order matters: the new static files reach S3 before the new server starts, so no visitor
-# gets HTML that points at a file that isn't there yet. One-time setup: docs/deploy/aws.md.
+# gets HTML that points at a file that isn't there yet.
 name: Deploy to AWS
 
 on:
@@ -18,7 +20,9 @@ permissions:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
-  STACK_NAME: chakh-app
+  CLUSTER: chakh
+  SERVICE: chakh-web
+  FAMILY: chakh
 
 jobs:
   test:
@@ -39,17 +43,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      # Fails when the environment is destroyed (the role goes with it); that just means "skip".
+      - id: creds
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      - id: env
+        name: Is the AWS environment up?
+        run: |
+          up=false
+          if [ "${{ steps.creds.outcome }}" = success ]; then
+            n=$(aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE" \
+              --query 'length(services[?status==`ACTIVE`])' --output text 2>/dev/null || echo 0)
+            [ "$n" = 1 ] && up=true
+          fi
+          echo "up=$up" >> "$GITHUB_OUTPUT"
+          if [ "$up" = false ]; then
+            echo "::notice::AWS environment is down; nothing deployed. Create it with terraform (terraform/README.md), then run this workflow."
+          fi
+
       - id: ecr
+        if: steps.env.outputs.up == 'true'
         uses: aws-actions/amazon-ecr-login@v2
 
-      - uses: docker/setup-buildx-action@v3
+      - if: steps.env.outputs.up == 'true'
+        uses: docker/setup-buildx-action@v3
 
       - name: Build image
+        if: steps.env.outputs.up == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -65,6 +89,7 @@ jobs:
 
       - name: Push image
         id: image
+        if: steps.env.outputs.up == 'true'
         run: |
           IMAGE=${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
           docker push "$IMAGE"
@@ -72,6 +97,7 @@ jobs:
 
       # Copy the static files out of the image just built, so they match its build exactly.
       - name: Upload static files to S3
+        if: steps.env.outputs.up == 'true'
         run: |
           cid=$(docker create "${{ steps.image.outputs.uri }}")
           mkdir -p out/_next
@@ -85,28 +111,27 @@ jobs:
           aws s3 sync out/brand "s3://${{ vars.STATIC_BUCKET }}/brand" \
             --cache-control "public, max-age=86400"
 
-      - name: Deploy app stack
+      # New task definition revision with this commit's image; ECS swaps the server once the
+      # new one is healthy and rolls back a broken one. desired-count 1 also starts the server
+      # the first time after `terraform apply` (which creates the service with 0).
+      - name: Deploy server
+        if: steps.env.outputs.up == 'true'
         run: |
-          PREFIX_LIST=$(aws ec2 describe-managed-prefix-lists \
-            --filters Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing \
-            --query 'PrefixLists[0].PrefixListId' --output text)
-          # Waits until the new server is healthy; a failing one is rolled back by ECS.
-          aws cloudformation deploy \
-            --stack-name "$STACK_NAME" \
-            --template-file infra/aws/app.yml \
-            --role-arn "${{ vars.AWS_CFN_EXEC_ROLE_ARN }}" \
-            --no-fail-on-empty-changeset \
-            --parameter-overrides \
-              ImageUri="${{ steps.image.outputs.uri }}" \
-              StaticBucketName="${{ vars.STATIC_BUCKET }}" \
-              OriginSecret="${{ secrets.AWS_ORIGIN_SECRET }}" \
-              CloudFrontPrefixListId="$PREFIX_LIST" \
-              DomainName="${{ vars.DOMAIN_NAME }}" \
-              CertificateArn="${{ vars.CERTIFICATE_ARN }}"
+          aws ecs describe-task-definition --task-definition "$FAMILY" --query taskDefinition \
+            | jq --arg img "${{ steps.image.outputs.uri }}" '
+                .containerDefinitions[0].image = $img
+                | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                      .compatibilities, .registeredAt, .registeredBy)' > taskdef.json
+          ARN=$(aws ecs register-task-definition --cli-input-json file://taskdef.json \
+            --query taskDefinition.taskDefinitionArn --output text)
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" \
+            --task-definition "$ARN" --desired-count 1 > /dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
 
       - name: Refresh logo files at the edge
+        if: steps.env.outputs.up == 'true'
         run: |
-          out() { aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
-            --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
-          aws cloudfront create-invalidation --distribution-id "$(out DistributionId)" --paths '/brand/*' > /dev/null
-          echo "Deployed: $(out SiteUrl)" >> "$GITHUB_STEP_SUMMARY"
+          read -r ID DOMAIN < <(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='Chakh'] | [0].[Id, DomainName]" --output text)
+          aws cloudfront create-invalidation --distribution-id "$ID" --paths '/brand/*' > /dev/null
+          echo "Deployed: https://$DOMAIN" >> "$GITHUB_STEP_SUMMARY"

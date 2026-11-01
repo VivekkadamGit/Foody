@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars (git-ignored) and fill in from .env.local.
+supabase_url              = "https://your-project-id.supabase.co"
+supabase_anon_key         = "..."
+supabase_service_role_key = "..."
+gemini_api_key            = "..."
+
+# Optional
+# ai_search       = "off"
+# use_spot        = false   # regular Fargate: ~$11/month instead of ~$3, never reclaimed
+# domain_name     = "chakh.in"
+# certificate_arn = "arn:aws:acm:us-east-1:...:certificate/..."
