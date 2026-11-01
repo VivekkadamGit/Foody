@@ -1,6 +1,7 @@
-# Deploys Chakh to AWS on every push to master (or by hand from the Actions tab).
-# The AWS environment itself is created and removed with Terraform (terraform/README.md);
-# while it is down, this workflow tests and then skips the deploy.
+# Ships the code to AWS on every push to master (or by hand from the Actions tab): pushes the
+# image, uploads the static files, and has ECS roll out the new image. The infrastructure
+# itself is Terraform's (terraform/README.md); this workflow never changes it. While the
+# environment is down, it tests and then skips the deploy.
 # Order matters: the new static files reach S3 before the new server starts, so no visitor
 # gets HTML that points at a file that isn't there yet.
 name: Deploy to AWS
@@ -22,7 +23,6 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   CLUSTER: chakh
   SERVICE: chakh-web
-  FAMILY: chakh
 
 jobs:
   test:
@@ -78,7 +78,9 @@ jobs:
         with:
           context: .
           load: true
-          tags: ${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/chakh:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -91,9 +93,10 @@ jobs:
         id: image
         if: steps.env.outputs.up == 'true'
         run: |
-          IMAGE=${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
-          docker push "$IMAGE"
-          echo "uri=$IMAGE" >> "$GITHUB_OUTPUT"
+          REPO=${{ steps.ecr.outputs.registry }}/chakh
+          docker push "$REPO:${{ github.sha }}" # kept for reference: which commit is which image
+          docker push "$REPO:latest"            # what the task definition runs
+          echo "uri=$REPO:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
       # Copy the static files out of the image just built, so they match its build exactly.
       - name: Upload static files to S3
@@ -111,21 +114,12 @@ jobs:
           aws s3 sync out/brand "s3://${{ vars.STATIC_BUCKET }}/brand" \
             --cache-control "public, max-age=86400"
 
-      # New task definition revision with this commit's image; ECS swaps the server once the
-      # new one is healthy and rolls back a broken one. desired-count 1 also starts the server
-      # the first time after `terraform apply` (which creates the service with 0).
-      - name: Deploy server
+      # The task definition runs `latest`, so a new rollout picks up the image just pushed.
+      # ECS swaps the server once the new one is healthy and rolls back a broken one.
+      - name: Roll out the new image
         if: steps.env.outputs.up == 'true'
         run: |
-          aws ecs describe-task-definition --task-definition "$FAMILY" --query taskDefinition \
-            | jq --arg img "${{ steps.image.outputs.uri }}" '
-                .containerDefinitions[0].image = $img
-                | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
-                      .compatibilities, .registeredAt, .registeredBy)' > taskdef.json
-          ARN=$(aws ecs register-task-definition --cli-input-json file://taskdef.json \
-            --query taskDefinition.taskDefinitionArn --output text)
-          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" \
-            --task-definition "$ARN" --desired-count 1 > /dev/null
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --force-new-deployment > /dev/null
           aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
 
       - name: Refresh logo files at the edge

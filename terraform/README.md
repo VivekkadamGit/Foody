@@ -17,20 +17,25 @@ Both show Terraform's plan and wait for you to type `yes`.
 | `network.tf` | VPC, two public subnets, internet gateway (no NAT gateway) |
 | `storage.tf` | ECR image repository, private S3 bucket for static files, server secrets in SSM Parameter Store |
 | `github.tf` | GitHub's OIDC sign-in and the `chakh-github-deploy` role the workflow uses |
-| `app.tf` | Load balancer (CloudFront-only), ECS cluster, Fargate Spot service (0.25 vCPU / 0.5 GB), logs |
+| `app.tf` | Load balancer (CloudFront-only), ECS cluster, task definition and Fargate Spot service (0.25 vCPU / 0.5 GB), logs |
 | `cdn.tf` | CloudFront: `/_next/static/*` and `/brand/*` from S3, everything else to the server |
 
-## How `up.sh` and the deploy workflow fit together
+## Who does what
 
-1. `terraform apply` creates the infrastructure. The ECS service starts with 0 servers,
-   because there is no image yet.
-2. `up.sh` sets the GitHub variables (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `STATIC_BUCKET`) and
-   starts the "Deploy to AWS" workflow.
-3. The workflow builds the image, uploads the static files to S3, registers a task definition
-   with that image and sets the service to 1 server.
+**Terraform owns the infrastructure, including the server's task definition** (size,
+secrets, which image tag to run: `latest`). To change any of it, edit the `.tf` files or
+`terraform.tfvars` and run `up.sh` again; on a running environment it only changes what differs.
 
-After that, every push to `master` deploys. While the environment is down, the workflow runs
-the tests and skips the deploy with a notice instead of failing.
+**The deploy workflow only ships code.** On every push to `master` it:
+1. builds the image and pushes it as `<commit sha>` and `latest`,
+2. uploads the static files to S3,
+3. asks ECS for a new rollout, which starts a server on the new `latest` image, switches over
+   once it's healthy, and rolls back a broken one. ECS pins the exact image of each rollout,
+   so a rollback really gets the previous build.
+
+On a fresh `up.sh`, the server can't start until the first image exists, so ECS retries for a
+few minutes until the deploy run that `up.sh` starts has pushed one. While the environment is
+down, the workflow runs the tests and skips the deploy with a notice instead of failing.
 
 ## Needs
 

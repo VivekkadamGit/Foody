@@ -148,8 +148,8 @@ resource "aws_iam_role_policy" "read_secrets" {
   })
 }
 
-# The deploy workflow registers a new revision with each commit's image; this one is the
-# starting point it copies, so Terraform ignores later image changes (see the service).
+# Runs the image tagged `latest`. The deploy workflow pushes each commit as `latest` and starts
+# a rollout; ECS pins the exact image of every rollout, so rolling back still gets the old one.
 resource "aws_ecs_task_definition" "app" {
   family                   = local.name
   requires_compatibilities = ["FARGATE"]
@@ -185,8 +185,9 @@ resource "aws_ecs_service" "app" {
   name            = "${local.name}-web"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
-  # 0 until the deploy workflow has pushed an image; the workflow then sets 1.
-  desired_count                     = 0
+  # Right after the first apply there is no image yet: ECS keeps retrying until up.sh's deploy run
+  # pushes one (a few minutes). apply doesn't wait for that.
+  desired_count                     = var.server_count
   health_check_grace_period_seconds = 30
 
   # Rolling deploy: the new task is healthy before the old one stops; a broken image rolls back.
@@ -212,10 +213,6 @@ resource "aws_ecs_service" "app" {
     target_group_arn = aws_lb_target_group.app.arn
     container_name   = "web"
     container_port   = 3000
-  }
-
-  lifecycle {
-    ignore_changes = [task_definition, desired_count]
   }
 
   depends_on = [aws_lb_listener_rule.from_cloudfront, aws_ecs_cluster_capacity_providers.main]

@@ -60,17 +60,10 @@ data "aws_iam_policy_document" "github_deploy" {
     actions   = ["s3:GetObject", "s3:PutObject"]
     resources = ["${aws_s3_bucket.static.arn}/*"]
   }
+  # Roll out the new image only; the service and task definition themselves are Terraform's.
   statement {
     actions   = ["ecs:DescribeServices", "ecs:UpdateService"]
     resources = ["arn:aws:ecs:${var.region}:${local.account}:service/${local.name}/*"]
-  }
-  statement {
-    actions   = ["ecs:DescribeTaskDefinition", "ecs:RegisterTaskDefinition"]
-    resources = ["*"]
-  }
-  statement {
-    actions   = ["iam:PassRole"]
-    resources = [aws_iam_role.task_execution.arn]
   }
   statement {
     actions   = ["cloudfront:CreateInvalidation", "cloudfront:ListDistributions"]

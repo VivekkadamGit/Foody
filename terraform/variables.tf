@@ -59,6 +59,12 @@ variable "task_memory" {
   default = 512
 }
 
+variable "server_count" {
+  description = "Number of servers. Keep 1: the search cache and revalidatePath are per server."
+  type        = number
+  default     = 1
+}
+
 variable "use_spot" {
   description = "Fargate Spot is ~70% cheaper; AWS can reclaim the task with two minutes' notice (a minute or two of downtime)."
   type        = bool

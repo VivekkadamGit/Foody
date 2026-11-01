@@ -63,14 +63,15 @@ environment is up, and skips the deploy while it's down.
 |---|---|
 | `Dockerfile` | Builds the Next.js standalone server (`output: 'standalone'` in `next.config.mjs`) |
 | `terraform/` | All AWS resources, plus `up.sh` / `down.sh` |
-| `.github/workflows/deploy-aws.yml` | Test → build image → upload static files to S3 → new server version on ECS |
+| `.github/workflows/deploy-aws.yml` | Ships code only: test → push image (`latest`) → upload static files to S3 → ECS rollout |
 | `app/api/health/route.ts` | Health check for the load balancer (doesn't touch Supabase) |
 
 ## Day to day
 
 - **Logs:** CloudWatch → Log groups → `/ecs/chakh`.
 - **Rollback:** a server that fails its health check is rolled back automatically. To go
-  back to an older commit, re-run that commit's workflow run from the Actions tab.
+  back to an older commit, re-run that commit's workflow run from the Actions tab (it pushes
+  that build as `latest` again).
 - **Switch AI search off:** set `ai_search = "off"` and run `terraform/up.sh` (on a running
   environment it only changes what differs).
 
