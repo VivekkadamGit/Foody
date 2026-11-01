@@ -95,6 +95,7 @@ jobs:
             --stack-name "$STACK_NAME" \
             --template-file infra/aws/app.yml \
             --role-arn "${{ vars.AWS_CFN_EXEC_ROLE_ARN }}" \
+            --capabilities CAPABILITY_IAM \
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               ImageUri="${{ steps.image.outputs.uri }}" \
