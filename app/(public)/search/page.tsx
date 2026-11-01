@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { parseQuery } from '@/lib/taxonomy'
 import { CITY_PRIORITY } from '@/lib/cities'
-import { runSearch } from '@/lib/search/run'
+import { runAiSearch } from '@/lib/search/ai/run'
+import { aiDeps } from '@/lib/search/ai/deps'
 import { headingFor } from '@/lib/search/present'
 import type { ChipParams, SearchResponse } from '@/lib/search/types'
 import DishResultCard from '@/components/search/DishResultCard'
@@ -45,7 +46,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Param
 
   let res: SearchResponse | null = null
   try {
-    res = await runSearch(supabase, q, city.slug, chips)
+    res = await runAiSearch(supabase, q, city.slug, chips, aiDeps)
   } catch (err) {
     console.error('[search] page failed:', err)
   }
@@ -61,7 +62,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Param
           </h1>
           <FilterChips q={q} city={city.slug} typed={parseQuery(q)} chips={chips} />
           <div className="mt-8">
-            {res.empty ? (
+            {res.empty && res.kind === 'ai' ? (
+              <AiEmptyState res={res} q={q} citySlug={city.slug} cityName={city.name} />
+            ) : res.empty ? (
               <EmptyState res={res} citySlug={city.slug} cityName={city.name} />
             ) : (
               <Results res={res} citySlug={city.slug} cityName={city.name} />
@@ -130,13 +133,15 @@ function Results({ res, citySlug, cityName }: { res: SearchResponse; citySlug: s
           </section>
         ))}
 
-      {(res.kind === 'specific' || res.kind === 'text') && (
+      {res.kind === 'ai' && <Showing labels={res.showing ?? []} />}
+
+      {(res.kind === 'specific' || res.kind === 'text' || res.kind === 'ai') && (
         <>
           {/* No rated answer: the places we plan to visit are the answer, so they lead. */}
           {listOnTop && <OnOurList items={res.onOurList} citySlug={citySlug} />}
           <div className="grid grid-cols-1 gap-3">
             {rated.map((d, i) => (
-              <DishResultCard key={d.id} dish={d} citySlug={citySlug} position={res.kind === 'specific' ? i + 1 : undefined} />
+              <DishResultCard key={d.id} dish={d} citySlug={citySlug} position={res.kind === 'specific' || res.kind === 'ai' ? i + 1 : undefined} />
             ))}
           </div>
           {unrated.length > 0 && (
@@ -152,7 +157,7 @@ function Results({ res, citySlug, cityName }: { res: SearchResponse; citySlug: s
         </>
       )}
 
-      {res.kind !== 'specific' && res.kind !== 'text' && <OnOurList items={res.onOurList} citySlug={citySlug} />}
+      {res.kind !== 'specific' && res.kind !== 'text' && res.kind !== 'ai' && <OnOurList items={res.onOurList} citySlug={citySlug} />}
     </>
   )
 }
@@ -166,6 +171,61 @@ function EmptyState({ res, citySlug, cityName }: { res: SearchResponse; citySlug
         Nothing we&apos;ve rated matches yet. Here&apos;s the best of {cityName} instead.
       </p>
       <Board res={res} citySlug={citySlug} cityName={cityName} />
+    </>
+  )
+}
+
+/** How the AI understood the request — so a visitor can see why these dishes came back. */
+function Showing({ labels }: { labels: string[] }) {
+  if (labels.length === 0) return null
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-5">
+      <span className="font-anek text-[13px] text-sand-dark">Showing</span>
+      {labels.map((l) => (
+        <span key={l} className="font-anek text-[12px] font-semibold px-3 py-1 rounded-full bg-[#fbeee6] text-ember">
+          {l}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/** The honest empty state: closest we've tried, other cities, on our list, then the city's best. */
+function AiEmptyState({ res, q, citySlug, cityName }: { res: SearchResponse; q: string; citySlug: string; cityName: string }) {
+  const closest = res.closest ?? []
+  const others = res.otherCities ?? []
+  return (
+    <>
+      {closest.length > 0 && (
+        <section className="mb-8">
+          <h2 className="font-anek text-xl font-bold text-charcoal mb-3">Closest we&apos;ve tried</h2>
+          <div className="grid grid-cols-1 gap-3">
+            {closest.map((d) => <DishResultCard key={d.id} dish={d} citySlug={citySlug} />)}
+          </div>
+        </section>
+      )}
+      {others.length > 0 && (
+        <ul className="mb-8 grid gap-2">
+          {others.map((c) => (
+            <li key={c.slug}>
+              <Link
+                href={`/search?q=${encodeURIComponent(q)}&city=${encodeURIComponent(c.slug)}`}
+                className="font-anek text-[15px] font-semibold text-ember hover:underline"
+              >
+                We&apos;ve tried {res.missing} in {c.name} →
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      <RestaurantList res={res} citySlug={citySlug} />
+      <OnOurList items={res.onOurList} citySlug={citySlug} />
+      {res.board && (
+        <>
+          <p className="font-anek text-[15px] text-sand-dark mt-8 mb-4">Here&apos;s the best of {cityName} instead.</p>
+          <Board res={res} citySlug={citySlug} cityName={cityName} />
+        </>
+      )}
     </>
   )
 }

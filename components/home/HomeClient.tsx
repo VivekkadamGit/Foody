@@ -316,7 +316,7 @@ export default function HomeClient({ bundles, lockedCities = [] }: { bundles: Ci
 
                 {!searchFailed && !searching && !hasResults && (
                   <Link href={searchHref} className="block px-5 py-3 font-anek text-[13.5px] text-sand-dark m-0 hover:text-ember">
-                    Nothing rated matches &ldquo;{query.trim()}&rdquo; in {active.city.name} yet — see the city&apos;s best →
+                    Press Enter and we&apos;ll find what fits →
                   </Link>
                 )}
 

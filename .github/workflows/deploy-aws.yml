@@ -1,0 +1,112 @@
+# Deploys Chakh to AWS on every push to master (or by hand from the Actions tab).
+# Order matters: the new static files reach S3 before the new server starts, so no visitor
+# gets HTML that points at a file that isn't there yet. One-time setup: docs/deploy/aws.md.
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-aws
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # sign in to AWS with GitHub's OIDC token, no stored AWS keys
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  STACK_NAME: chakh-app
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: ${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+            NEXT_PUBLIC_ENABLE_AI_SUGGEST=${{ vars.NEXT_PUBLIC_ENABLE_AI_SUGGEST }}
+
+      - name: Push image
+        id: image
+        run: |
+          IMAGE=${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
+          docker push "$IMAGE"
+          echo "uri=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      # Copy the static files out of the image just built, so they match its build exactly.
+      - name: Upload static files to S3
+        run: |
+          cid=$(docker create "${{ steps.image.outputs.uri }}")
+          mkdir -p out/_next
+          docker cp "$cid:/app/.next/static" out/_next/static
+          docker cp "$cid:/app/public/brand" out/brand
+          docker rm "$cid"
+          # Hashed file names never change content: cache for a year. No --delete, so pages
+          # still open from the previous build keep finding their files.
+          aws s3 sync out/_next/static "s3://${{ vars.STATIC_BUCKET }}/_next/static" \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync out/brand "s3://${{ vars.STATIC_BUCKET }}/brand" \
+            --cache-control "public, max-age=86400"
+
+      - name: Deploy app stack
+        run: |
+          PREFIX_LIST=$(aws ec2 describe-managed-prefix-lists \
+            --filters Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing \
+            --query 'PrefixLists[0].PrefixListId' --output text)
+          # Waits until the new server is healthy; a failing one is rolled back by ECS.
+          aws cloudformation deploy \
+            --stack-name "$STACK_NAME" \
+            --template-file infra/aws/app.yml \
+            --role-arn "${{ vars.AWS_CFN_EXEC_ROLE_ARN }}" \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              ImageUri="${{ steps.image.outputs.uri }}" \
+              StaticBucketName="${{ vars.STATIC_BUCKET }}" \
+              OriginSecret="${{ secrets.AWS_ORIGIN_SECRET }}" \
+              CloudFrontPrefixListId="$PREFIX_LIST" \
+              DomainName="${{ vars.DOMAIN_NAME }}" \
+              CertificateArn="${{ vars.CERTIFICATE_ARN }}"
+
+      - name: Refresh logo files at the edge
+        run: |
+          out() { aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
+          aws cloudfront create-invalidation --distribution-id "$(out DistributionId)" --paths '/brand/*' > /dev/null
+          echo "Deployed: $(out SiteUrl)" >> "$GITHUB_STEP_SUMMARY"

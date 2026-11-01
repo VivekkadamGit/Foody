@@ -1,0 +1,340 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Chakh — the running app. CloudFront in front: /_next/static/* and /brand/* come from S3
+  (cached at the edge for a year / a day), everything else goes to the Next.js server on
+  ECS Fargate behind a load balancer. Deployed by .github/workflows/deploy-aws.yml on every
+  push to master; see docs/deploy/aws.md.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: The container image to run (ECR URI with the commit sha tag). Set by the workflow.
+  StaticBucketName:
+    Type: String
+    Description: The bucket from bootstrap.yml.
+  OriginSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 32
+    Description: Sent by CloudFront on every request; the load balancer refuses requests without it.
+  CloudFrontPrefixListId:
+    Type: String
+    Description: This region's com.amazonaws.global.cloudfront.origin-facing prefix list. Looked up by the workflow.
+  SsmPrefix:
+    Type: String
+    Default: /chakh
+    Description: Secrets live in SSM Parameter Store under this path (see docs/deploy/aws.md).
+  AiSearch:
+    Type: String
+    Default: 'on'
+    AllowedValues: ['on', 'off']
+  # Cheapest Fargate size. 512 / 1024 if the server runs short of memory (see the logs).
+  TaskCpu:
+    Type: String
+    Default: '256'
+  TaskMemory:
+    Type: String
+    Default: '512'
+  CapacityProvider:
+    Type: String
+    Default: FARGATE_SPOT
+    AllowedValues: [FARGATE_SPOT, FARGATE]
+    Description: >
+      FARGATE_SPOT is ~70% cheaper, but AWS can reclaim the task with two minutes' notice;
+      ECS starts a replacement, so the site can be down for a minute or two. FARGATE never is.
+  TaskCount:
+    Type: Number
+    Default: 1
+    Description: Keep at 1 for now — the search cache and revalidatePath are per server.
+  DomainName:
+    Type: String
+    Default: ''
+    Description: Optional, e.g. chakh.in. Empty = use the cloudfront.net address.
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: ACM certificate for DomainName. Must be in us-east-1 (CloudFront's rule).
+  PriceClass:
+    Type: String
+    Default: PriceClass_200
+    AllowedValues: [PriceClass_100, PriceClass_200, PriceClass_All]
+    Description: PriceClass_100 has no edge in India; 200 does (Mumbai, Delhi, Chennai, Hyderabad, Bengaluru, Kolkata).
+
+Conditions:
+  HasDomain: !And [!Not [!Equals [!Ref DomainName, '']], !Not [!Equals [!Ref CertificateArn, '']]]
+
+Mappings:
+  # AWS-managed CloudFront policy ids (the same in every account).
+  Managed:
+    CachePolicy: { Disabled: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad, Optimized: 658327ea-f89d-4fab-a63d-7e88639e58f6 }
+
+Resources:
+  # ---------- Network: two public subnets, no NAT gateway (tasks get public IPs to reach Supabase/Gemini) ----------
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags: [{ Key: Name, Value: chakh }]
+  Igw:
+    Type: AWS::EC2::InternetGateway
+  IgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: { VpcId: !Ref Vpc, InternetGatewayId: !Ref Igw }
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.0.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.1.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: { VpcId: !Ref Vpc }
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: IgwAttach
+    Properties: { RouteTableId: !Ref RouteTable, DestinationCidrBlock: 0.0.0.0/0, GatewayId: !Ref Igw }
+  SubnetARoutes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref SubnetA, RouteTableId: !Ref RouteTable }
+  SubnetBRoutes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref SubnetB, RouteTableId: !Ref RouteTable }
+
+  # ---------- Load balancer: reachable only from CloudFront, and only with the secret header ----------
+  AlbSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Chakh load balancer - CloudFront only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, SourcePrefixListId: !Ref CloudFrontPrefixListId }
+  TaskSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Chakh app tasks - load balancer only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 3000, ToPort: 3000, SourceSecurityGroupId: !Ref AlbSg }
+  Alb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: IgwAttach
+    Properties:
+      Scheme: internet-facing
+      Subnets: [!Ref SubnetA, !Ref SubnetB]
+      SecurityGroups: [!Ref AlbSg]
+      LoadBalancerAttributes:
+        - { Key: idle_timeout.timeout_seconds, Value: '60' }
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref Vpc
+      TargetType: ip
+      Protocol: HTTP
+      Port: 3000
+      HealthCheckPath: /api/health
+      HealthCheckIntervalSeconds: 15
+      HealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - { Key: deregistration_delay.timeout_seconds, Value: '30' }
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig: { StatusCode: '403', ContentType: text/plain, MessageBody: Forbidden }
+  FromCloudFront:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref Listener
+      Priority: 1
+      Conditions:
+        - Field: http-header
+          HttpHeaderConfig: { HttpHeaderName: X-Origin-Verify, Values: [!Ref OriginSecret] }
+      Actions:
+        - { Type: forward, TargetGroupArn: !Ref TargetGroup }
+
+  # ---------- The Next.js server ----------
+  Logs:
+    Type: AWS::Logs::LogGroup
+    Properties: { LogGroupName: /ecs/chakh, RetentionInDays: 14 }
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: chakh
+      CapacityProviders: [FARGATE, FARGATE_SPOT]
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - { Effect: Allow, Principal: { Service: ecs-tasks.amazonaws.com }, Action: sts:AssumeRole }
+      ManagedPolicyArns: [arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy]
+      Policies:
+        - PolicyName: read-secrets
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameters
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SsmPrefix}/*
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: chakh
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: !Ref TaskCpu
+      Memory: !Ref TaskMemory
+      RuntimePlatform: { OperatingSystemFamily: LINUX, CpuArchitecture: X86_64 }
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: web
+          Image: !Ref ImageUri
+          Essential: true
+          PortMappings: [{ ContainerPort: 3000 }]
+          Environment:
+            - { Name: AI_SEARCH, Value: !Ref AiSearch }
+          Secrets:
+            - { Name: NEXT_PUBLIC_SUPABASE_URL, ValueFrom: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SsmPrefix}/NEXT_PUBLIC_SUPABASE_URL' }
+            - { Name: NEXT_PUBLIC_SUPABASE_ANON_KEY, ValueFrom: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SsmPrefix}/NEXT_PUBLIC_SUPABASE_ANON_KEY' }
+            - { Name: SUPABASE_SERVICE_ROLE_KEY, ValueFrom: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SsmPrefix}/SUPABASE_SERVICE_ROLE_KEY' }
+            - { Name: GEMINI_API_KEY, ValueFrom: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SsmPrefix}/GEMINI_API_KEY' }
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref Logs
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: web
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: FromCloudFront
+    Properties:
+      ServiceName: chakh-web
+      Cluster: !Ref Cluster
+      CapacityProviderStrategy:
+        - { CapacityProvider: !Ref CapacityProvider, Weight: 1 }
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref TaskCount
+      HealthCheckGracePeriodSeconds: 30
+      # Rolling deploy: the new task is healthy before the old one stops; a broken image rolls back.
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker: { Enable: true, Rollback: true }
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: [!Ref SubnetA, !Ref SubnetB]
+          SecurityGroups: [!Ref TaskSg]
+      LoadBalancers:
+        - { ContainerName: web, ContainerPort: 3000, TargetGroupArn: !Ref TargetGroup }
+
+  # ---------- CloudFront ----------
+  StaticOac:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub chakh-static-${AWS::StackName}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+  # Pass the visitor's Host (server actions compare it with Origin), cookies (admin sign-in),
+  # query strings, and CloudFront-Forwarded-Proto (the load balancer only sees http).
+  AppRequests:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: !Sub chakh-app-${AWS::StackName}
+        HeadersConfig:
+          HeaderBehavior: allViewerAndWhitelistCloudFront
+          Headers: [CloudFront-Forwarded-Proto]
+        CookiesConfig: { CookieBehavior: all }
+        QueryStringsConfig: { QueryStringBehavior: all }
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Chakh
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: !Ref PriceClass
+        Aliases: !If [HasDomain, [!Ref DomainName], !Ref AWS::NoValue]
+        ViewerCertificate: !If
+          - HasDomain
+          - { AcmCertificateArn: !Ref CertificateArn, SslSupportMethod: sni-only, MinimumProtocolVersion: TLSv1.2_2021 }
+          - { CloudFrontDefaultCertificate: true }
+        Origins:
+          - Id: app
+            DomainName: !GetAtt Alb.DNSName
+            OriginCustomHeaders:
+              - { HeaderName: X-Origin-Verify, HeaderValue: !Ref OriginSecret }
+            CustomOriginConfig:
+              HTTPPort: 80
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 30
+              OriginKeepaliveTimeout: 30
+          - Id: static
+            DomainName: !Sub ${StaticBucketName}.s3.${AWS::Region}.amazonaws.com
+            OriginAccessControlId: !GetAtt StaticOac.Id
+            S3OriginConfig: { OriginAccessIdentity: '' }
+        DefaultCacheBehavior:
+          TargetOriginId: app
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+          CachedMethods: [GET, HEAD]
+          CachePolicyId: !FindInMap [Managed, CachePolicy, Disabled]
+          OriginRequestPolicyId: !Ref AppRequests
+          Compress: true
+        CacheBehaviors:
+          - PathPattern: /_next/static/*
+            TargetOriginId: static
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: !FindInMap [Managed, CachePolicy, Optimized]
+            Compress: true
+          - PathPattern: /brand/*
+            TargetOriginId: static
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: !FindInMap [Managed, CachePolicy, Optimized]
+            Compress: true
+  StaticBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticBucketName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub arn:aws:s3:::${StaticBucketName}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+
+Outputs:
+  SiteUrl:
+    Value: !If [HasDomain, !Sub 'https://${DomainName}', !Sub 'https://${Distribution.DomainName}']
+  CloudFrontDomain:
+    Description: Point your domain's DNS (CNAME / alias) here.
+    Value: !GetAtt Distribution.DomainName
+  DistributionId:
+    Value: !Ref Distribution

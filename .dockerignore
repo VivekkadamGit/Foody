@@ -1,0 +1,15 @@
+.git
+.github
+.next
+.claude
+.superpowers
+node_modules
+cms
+docs
+infra
+supabase
+*.png
+!public/**/*.png
+.env*
+!.env.local.example
+*.tsbuildinfo

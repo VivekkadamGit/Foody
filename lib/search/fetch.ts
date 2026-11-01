@@ -17,11 +17,11 @@ function escapeLike(input: string): string {
   return input.replace(/[\\%_]/g, (ch) => `\\${ch}`)
 }
 
-function areaOf(address: string | null | undefined): string | null {
+export function areaOf(address: string | null | undefined): string | null {
   return address ? String(address).split(',')[0].trim() : null
 }
 
-function toDishHit(d: any, matchedOn: DishHit['matchedOn']): DishHit {
+export function toDishHit(d: any, matchedOn: DishHit['matchedOn']): DishHit {
   return {
     kind: 'dish',
     matchedOn,
