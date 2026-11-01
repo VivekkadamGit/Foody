@@ -28,4 +28,4 @@ gh workflow run deploy-aws.yml -R "$REPO" --ref master
 echo
 echo "Infrastructure is up. The first deploy is running: gh run watch -R $REPO"
 echo "Site: $(terraform output -raw site_url)  (live once that run finishes, ~5-8 min)"
-echo "Add $(terraform output -raw site_url)/auth/callback and /admin/reset-password to Supabase's redirect URLs."
+echo "Supabase's redirect URLs need $(terraform output -raw site_url)/auth/callback and /admin/reset-password."

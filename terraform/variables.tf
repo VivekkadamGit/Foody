@@ -79,13 +79,11 @@ variable "price_class" {
 }
 
 variable "domain_name" {
-  description = "Optional custom domain, e.g. chakh.in. Empty = the cloudfront.net address."
+  description = <<-EOT
+    The site's domain; www.<domain> is served too. Its Route 53 hosted zone must already exist
+    (it's kept outside Terraform so destroy never changes the nameservers set at the registrar).
+    Empty = only the cloudfront.net address.
+  EOT
   type        = string
-  default     = ""
-}
-
-variable "certificate_arn" {
-  description = "ACM certificate for domain_name, in us-east-1 (CloudFront's rule)."
-  type        = string
-  default     = ""
+  default     = "chakh.in"
 }

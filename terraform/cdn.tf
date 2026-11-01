@@ -32,9 +32,6 @@ resource "aws_cloudfront_origin_request_policy" "app" {
   }
 }
 
-locals {
-  has_domain = var.domain_name != "" && var.certificate_arn != ""
-}
 
 resource "aws_cloudfront_distribution" "site" {
   enabled         = true
@@ -42,7 +39,7 @@ resource "aws_cloudfront_distribution" "site" {
   http_version    = "http2and3"
   is_ipv6_enabled = true
   price_class     = var.price_class
-  aliases         = local.has_domain ? [var.domain_name] : []
+  aliases         = local.site_names
 
   origin {
     origin_id   = "app"
@@ -98,7 +95,7 @@ resource "aws_cloudfront_distribution" "site" {
 
   viewer_certificate {
     cloudfront_default_certificate = !local.has_domain
-    acm_certificate_arn            = local.has_domain ? var.certificate_arn : null
+    acm_certificate_arn            = local.has_domain ? aws_acm_certificate_validation.site[0].certificate_arn : null
     ssl_support_method             = local.has_domain ? "sni-only" : null
     minimum_protocol_version       = local.has_domain ? "TLSv1.2_2021" : "TLSv1"
   }

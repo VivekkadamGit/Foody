@@ -19,6 +19,7 @@ Both show Terraform's plan and wait for you to type `yes`.
 | `github.tf` | GitHub's OIDC sign-in and the `chakh-github-deploy` role the workflow uses |
 | `app.tf` | Load balancer (CloudFront-only), ECS cluster, task definition and Fargate Spot service (0.25 vCPU / 0.5 GB), logs |
 | `cdn.tf` | CloudFront: `/_next/static/*` and `/brand/*` from S3, everything else to the server |
+| `dns.tf` | ACM certificate (us-east-1) for `chakh.in` + `www.chakh.in`, validated through Route 53, and the A/AAAA records pointing both at CloudFront |
 
 ## Who does what
 
@@ -48,10 +49,14 @@ down, the workflow runs the tests and skips the deploy with a notice instead of 
 
 ## Things to know
 
-- **The address changes on every `up`** (a new `*.cloudfront.net` name) unless you set
-  `domain_name` + `certificate_arn`. Add the new address to Supabase → Authentication → URL
-  Configuration (`/auth/callback` and `/admin/reset-password`), or password resets and invites
-  won't land.
+- **The site is https://chakh.in** (and www.chakh.in) after every `up`. The Route 53 hosted
+  zone for `chakh.in` is deliberately *not* managed here: destroying and recreating it would give
+  it new nameservers, and GoDaddy would have to be updated each time. `down.sh` removes only the
+  records and the certificate. Supabase → Authentication → URL Configuration needs
+  `https://chakh.in/auth/callback` and `https://chakh.in/admin/reset-password` (once).
+- **Imported, not created:** the ECR repository, the static bucket, the GitHub OIDC provider and
+  the four `/chakh/*` secrets existed before Terraform (from the earlier CloudFormation setup)
+  and were brought in with `terraform import`. Terraform owns them now like everything else.
 - **State is local** (`terraform.tfstate` in this folder, git-ignored). Keep it while the
   environment is up: without it, `down.sh` can't find what to remove.
 - **Cost while up:** about $35 a month (≈ $1.20 a day). Most of that is the load balancer and its

@@ -7,5 +7,4 @@ gemini_api_key            = "..."
 # Optional
 # ai_search       = "off"
 # use_spot        = false   # regular Fargate: ~$11/month instead of ~$3, never reclaimed
-# domain_name     = "chakh.in"
-# certificate_arn = "arn:aws:acm:us-east-1:...:certificate/..."
+# domain_name     = ""      # default chakh.in; empty = cloudfront.net address only
