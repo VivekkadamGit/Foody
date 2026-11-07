@@ -70,6 +70,19 @@ export async function fetchCandidates(sb: SupabaseClient, city: string): Promise
   return toCandidates(data)
 }
 
+/** Dishes in every live city, for AI Suggest, which isn't tied to one city. */
+export async function fetchAllCandidates(sb: SupabaseClient): Promise<Candidate[]> {
+  const { data, error } = await sb
+    .from('dishes')
+    .select(CANDIDATE_SELECT)
+    .eq('restaurants.cities.status', 'active')
+    .is('deleted_at', null)
+    .is('restaurants.deleted_at', null)
+    .limit(1000)
+  if (error) throw new Error(`all candidates failed: ${error.message}`)
+  return toCandidates(data)
+}
+
 /** Dishes in every other live city — only fetched for the "We've tried it in…" line. */
 export async function fetchOtherCityCandidates(sb: SupabaseClient, excludeCity: string): Promise<Candidate[]> {
   const { data, error } = await sb
