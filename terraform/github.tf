@@ -60,10 +60,18 @@ data "aws_iam_policy_document" "github_deploy" {
     actions   = ["s3:GetObject", "s3:PutObject"]
     resources = ["${aws_s3_bucket.static.arn}/*"]
   }
-  # Roll out the new image only; the service and task definition themselves are Terraform's.
+  # Deploy the new image with the environment from SSM; the service itself is Terraform's.
   statement {
-    actions   = ["ecs:DescribeServices", "ecs:UpdateService"]
-    resources = ["arn:aws:ecs:${var.region}:${local.account}:service/${local.name}/*"]
+    actions   = ["lightsail:CreateContainerServiceDeployment"]
+    resources = [aws_lightsail_container_service.app.arn]
+  }
+  statement {
+    actions   = ["lightsail:GetContainerServices", "lightsail:GetContainerServiceDeployments"]
+    resources = ["*"]
+  }
+  statement {
+    actions   = ["ssm:GetParametersByPath"]
+    resources = ["arn:aws:ssm:${var.region}:${local.account}:parameter/${local.name}"]
   }
   statement {
     actions   = ["cloudfront:CreateInvalidation", "cloudfront:ListDistributions"]

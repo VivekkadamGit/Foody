@@ -1,4 +1,4 @@
-# CloudFront: /_next/static/* and /brand/* from S3, everything else to the load balancer.
+# CloudFront: /_next/static/* and /brand/* from S3, everything else to the Lightsail server.
 data "aws_cloudfront_cache_policy" "disabled" {
   name = "Managed-CachingDisabled"
 }
@@ -14,14 +14,29 @@ resource "aws_cloudfront_origin_access_control" "static" {
   signing_protocol                  = "sigv4"
 }
 
-# Pass the visitor's Host (server actions compare it with Origin), cookies (admin sign-in),
-# query strings, and CloudFront-Forwarded-Proto (the load balancer only sees http).
+# Lightsail only answers on its own URL, so the visitor's Host can't go to the server. This hands
+# the server the real one instead: server actions compare it with Origin, and sign-in links use it.
+# It always overwrites, so a visitor can't supply their own.
+resource "aws_cloudfront_function" "forward_host" {
+  name    = "${local.name}-forward-host"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-JS
+    function handler(event) {
+      var request = event.request;
+      request.headers['x-forwarded-host'] = { value: request.headers.host.value };
+      return request;
+    }
+  JS
+}
+
+# Everything the visitor sent except Host: cookies (admin sign-in), query strings, headers.
 resource "aws_cloudfront_origin_request_policy" "app" {
   name = "${local.name}-app"
   headers_config {
-    header_behavior = "allViewerAndWhitelistCloudFront"
+    header_behavior = "allExcept"
     headers {
-      items = ["CloudFront-Forwarded-Proto"]
+      items = ["host"]
     }
   }
   cookies_config {
@@ -32,6 +47,10 @@ resource "aws_cloudfront_origin_request_policy" "app" {
   }
 }
 
+locals {
+  # The service's url is "https://<name>.<id>.<region>.cs.amazonlightsail.com/"; an origin wants the bare name.
+  app_origin = trimsuffix(trimprefix(aws_lightsail_container_service.app.url, "https://"), "/")
+}
 
 resource "aws_cloudfront_distribution" "site" {
   enabled         = true
@@ -43,15 +62,11 @@ resource "aws_cloudfront_distribution" "site" {
 
   origin {
     origin_id   = "app"
-    domain_name = aws_lb.app.dns_name
-    custom_header {
-      name  = "X-Origin-Verify"
-      value = random_password.origin_secret.result
-    }
+    domain_name = local.app_origin
     custom_origin_config {
       http_port                = 80
       https_port               = 443
-      origin_protocol_policy   = "http-only"
+      origin_protocol_policy   = "https-only"
       origin_ssl_protocols     = ["TLSv1.2"]
       origin_read_timeout      = 30
       origin_keepalive_timeout = 30
@@ -72,6 +87,11 @@ resource "aws_cloudfront_distribution" "site" {
     cache_policy_id          = data.aws_cloudfront_cache_policy.disabled.id
     origin_request_policy_id = aws_cloudfront_origin_request_policy.app.id
     compress                 = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.forward_host.arn
+    }
   }
 
   dynamic "ordered_cache_behavior" {

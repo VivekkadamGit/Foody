@@ -48,27 +48,10 @@ variable "ai_search" {
 }
 
 # ---------- Server size ----------
-variable "task_cpu" {
-  description = "256 = 0.25 vCPU, the cheapest Fargate size."
-  type        = number
-  default     = 256
-}
-
-variable "task_memory" {
-  type    = number
-  default = 512
-}
-
-variable "server_count" {
-  description = "Number of servers. Keep 1: the search cache and revalidatePath are per server."
-  type        = number
-  default     = 1
-}
-
-variable "use_spot" {
-  description = "Fargate Spot is ~70% cheaper; AWS can reclaim the task with two minutes' notice (a minute or two of downtime)."
-  type        = bool
-  default     = true
+variable "container_power" {
+  description = "Lightsail power. nano = 0.25 vCPU / 512 MB ($7/month); micro = 0.25 vCPU / 1 GB ($10/month)."
+  type        = string
+  default     = "nano"
 }
 
 # ---------- CloudFront ----------

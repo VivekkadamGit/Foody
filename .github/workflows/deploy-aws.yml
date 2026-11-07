@@ -1,7 +1,7 @@
 # Ships the code to AWS on every push to master (or by hand from the Actions tab): pushes the
-# image, uploads the static files, and has ECS roll out the new image. The infrastructure
-# itself is Terraform's (terraform/README.md); this workflow never changes it. While the
-# environment is down, it tests and then skips the deploy.
+# image, uploads the static files, and deploys the image to the Lightsail container service.
+# The infrastructure itself is Terraform's (terraform/README.md); this workflow never changes it.
+# While the environment is down, it tests and then skips the deploy.
 # Order matters: the new static files reach S3 before the new server starts, so no visitor
 # gets HTML that points at a file that isn't there yet.
 name: Deploy to AWS
@@ -21,8 +21,7 @@ permissions:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
-  CLUSTER: chakh
-  SERVICE: chakh-web
+  SERVICE: chakh
 
 jobs:
   test:
@@ -55,10 +54,9 @@ jobs:
         name: Is the AWS environment up?
         run: |
           up=false
-          if [ "${{ steps.creds.outcome }}" = success ]; then
-            n=$(aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE" \
-              --query 'length(services[?status==`ACTIVE`])' --output text 2>/dev/null || echo 0)
-            [ "$n" = 1 ] && up=true
+          if [ "${{ steps.creds.outcome }}" = success ] \
+            && aws lightsail get-container-services --service-name "$SERVICE" > /dev/null 2>&1; then
+            up=true
           fi
           echo "up=$up" >> "$GITHUB_OUTPUT"
           if [ "$up" = false ]; then
@@ -78,9 +76,7 @@ jobs:
         with:
           context: .
           load: true
-          tags: |
-            ${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
-            ${{ steps.ecr.outputs.registry }}/chakh:latest
+          tags: ${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -93,10 +89,9 @@ jobs:
         id: image
         if: steps.env.outputs.up == 'true'
         run: |
-          REPO=${{ steps.ecr.outputs.registry }}/chakh
-          docker push "$REPO:${{ github.sha }}" # kept for reference: which commit is which image
-          docker push "$REPO:latest"            # what the task definition runs
-          echo "uri=$REPO:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          IMAGE=${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
+          docker push "$IMAGE"
+          echo "uri=$IMAGE" >> "$GITHUB_OUTPUT"
 
       # Copy the static files out of the image just built, so they match its build exactly.
       - name: Upload static files to S3
@@ -114,13 +109,32 @@ jobs:
           aws s3 sync out/brand "s3://${{ vars.STATIC_BUCKET }}/brand" \
             --cache-control "public, max-age=86400"
 
-      # The task definition runs `latest`, so a new rollout picks up the image just pushed.
-      # ECS swaps the server once the new one is healthy and rolls back a broken one.
-      - name: Roll out the new image
+      # Everything under /chakh/ in SSM becomes the container's environment. Lightsail switches
+      # over once the new container is healthy; if it never is, the old one keeps serving.
+      - name: Deploy to Lightsail
         if: steps.env.outputs.up == 'true'
         run: |
-          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --force-new-deployment > /dev/null
-          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+          aws ssm get-parameters-by-path --path /chakh --with-decryption --query Parameters --output json \
+            | jq --arg img "${{ steps.image.outputs.uri }}" '{web: {
+                image: $img,
+                ports: {"3000": "HTTP"},
+                environment: (map({key: (.Name | split("/") | last), value: .Value}) | from_entries)
+              }}' > containers.json
+          VERSION=$(aws lightsail create-container-service-deployment --service-name "$SERVICE" \
+            --containers file://containers.json \
+            --public-endpoint '{"containerName":"web","containerPort":3000,"healthCheck":{"path":"/api/health","successCodes":"200","intervalSeconds":15,"timeoutSeconds":5,"healthyThreshold":2,"unhealthyThreshold":3}}' \
+            --query containerService.nextDeployment.version --output text)
+          rm containers.json
+          for _ in $(seq 1 60); do
+            STATE=$(aws lightsail get-container-service-deployments --service-name "$SERVICE" \
+              --query "deployments[?version==\`$VERSION\`].state | [0]" --output text)
+            echo "Deployment $VERSION: $STATE"
+            [ "$STATE" = ACTIVE ] && exit 0
+            [ "$STATE" = FAILED ] && { echo "::error::Container failed to start; the previous version keeps serving."; exit 1; }
+            sleep 10
+          done
+          echo "::error::Timed out waiting for deployment $VERSION"
+          exit 1
 
       - name: Refresh logo files at the edge
         if: steps.env.outputs.up == 'true'

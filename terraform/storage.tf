@@ -51,18 +51,20 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "static" {
   }
 }
 
-# Server secrets. The task reads them at start; they go away with the rest on destroy.
+# The server's environment. The deploy workflow passes everything under /chakh/ to the container;
+# it goes away with the rest on destroy.
 locals {
   secrets = {
     NEXT_PUBLIC_SUPABASE_URL      = var.supabase_url
     NEXT_PUBLIC_SUPABASE_ANON_KEY = var.supabase_anon_key
     SUPABASE_SERVICE_ROLE_KEY     = var.supabase_service_role_key
     GEMINI_API_KEY                = var.gemini_api_key
+    AI_SEARCH                     = var.ai_search
   }
 }
 
 resource "aws_ssm_parameter" "secret" {
-  for_each = toset(["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "GEMINI_API_KEY"])
+  for_each = toset(["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "GEMINI_API_KEY", "AI_SEARCH"])
   name     = "/${local.name}/${each.key}"
   type     = "SecureString"
   value    = local.secrets[each.key]

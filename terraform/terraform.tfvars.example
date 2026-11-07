@@ -6,5 +6,5 @@ gemini_api_key            = "..."
 
 # Optional
 # ai_search       = "off"
-# use_spot        = false   # regular Fargate: ~$11/month instead of ~$3, never reclaimed
+# container_power = "micro"  # 1 GB memory: $10/month instead of $7
 # domain_name     = ""      # default chakh.in; empty = cloudfront.net address only

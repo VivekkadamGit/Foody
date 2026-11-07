@@ -14,29 +14,30 @@ Both show Terraform's plan and wait for you to type `yes`.
 
 | File | Resources |
 |---|---|
-| `network.tf` | VPC, two public subnets, internet gateway (no NAT gateway) |
-| `storage.tf` | ECR image repository, private S3 bucket for static files, server secrets in SSM Parameter Store |
+| `storage.tf` | ECR image repository, private S3 bucket for static files, the server's environment in SSM Parameter Store |
 | `github.tf` | GitHub's OIDC sign-in and the `chakh-github-deploy` role the workflow uses |
-| `app.tf` | Load balancer (CloudFront-only), ECS cluster, task definition and Fargate Spot service (0.25 vCPU / 0.5 GB), logs |
-| `cdn.tf` | CloudFront: `/_next/static/*` and `/brand/*` from S3, everything else to the server |
+| `app.tf` | Lightsail container service (Nano: 0.25 vCPU / 512 MB) and its permission to pull from ECR |
+| `cdn.tf` | CloudFront: `/_next/static/*` and `/brand/*` from S3, everything else to the server; a small function that passes the real host in `X-Forwarded-Host` |
 | `dns.tf` | ACM certificate (us-east-1) for `chakh.in` + `www.chakh.in`, validated through Route 53, and the A/AAAA records pointing both at CloudFront |
 
 ## Who does what
 
-**Terraform owns the infrastructure, including the server's task definition** (size,
-secrets, which image tag to run: `latest`). To change any of it, edit the `.tf` files or
-`terraform.tfvars` and run `up.sh` again; on a running environment it only changes what differs.
+**Terraform owns the infrastructure:** the container service and its size, CloudFront, DNS, the
+bucket and the values in SSM. To change any of it, edit the `.tf` files or `terraform.tfvars`
+and run `up.sh` again; on a running environment it only changes what differs.
 
 **The deploy workflow only ships code.** On every push to `master` it:
-1. builds the image and pushes it as `<commit sha>` and `latest`,
+1. builds the image and pushes it, tagged with the commit,
 2. uploads the static files to S3,
-3. asks ECS for a new rollout, which starts a server on the new `latest` image, switches over
-   once it's healthy, and rolls back a broken one. ECS pins the exact image of each rollout,
-   so a rollback really gets the previous build.
+3. creates a Lightsail deployment with that image and everything under `/chakh/` in SSM as the
+   environment. Lightsail switches over once the new container passes `/api/health`; if it never
+   does, the previous one keeps serving.
 
-On a fresh `up.sh`, the server can't start until the first image exists, so ECS retries for a
-few minutes until the deploy run that `up.sh` starts has pushed one. While the environment is
-down, the workflow runs the tests and skips the deploy with a notice instead of failing.
+The workflow creates the deployments, not Terraform, because a fresh environment has no image
+until the first run pushes one. So after a fresh `up.sh`, the site returns an error for a few
+minutes until the deploy run it starts has finished. A changed value in SSM reaches the container
+on the next deploy (`up.sh` starts one). While the environment is down, the workflow runs the
+tests and skips the deploy with a notice instead of failing.
 
 ## Needs
 
@@ -59,7 +60,9 @@ down, the workflow runs the tests and skips the deploy with a notice instead of 
   and were brought in with `terraform import`. Terraform owns them now like everything else.
 - **State is local** (`terraform.tfstate` in this folder, git-ignored). Keep it while the
   environment is up: without it, `down.sh` can't find what to remove.
-- **Cost while up:** about $35 a month (≈ $1.20 a day). Most of that is the load balancer and its
-  IP addresses; the Spot server is about $3 a month. `use_spot = false` → regular Fargate (≈ $11).
+- **Cost while up:** about $8 a month: $7 for Lightsail Nano, about $1 for the rest.
+  `container_power = "micro"` → 1 GB memory for $10.
+- **Dev-only setup:** the Lightsail URL is public and the environment is visible in its console.
+  See "When to move off it" in `docs/deploy/aws.md`.
 - **Nothing is kept after `down`:** images, static files and secrets go too. `up` rebuilds
   everything from `master`.
