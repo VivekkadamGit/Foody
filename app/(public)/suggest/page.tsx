@@ -7,6 +7,7 @@ type SuggestionResult = {
   dish: string | null
   restaurant: string | null
   city: string | null
+  score?: number | null
   reason: string | null
   link: string | null
   suggestion?: string
@@ -101,6 +102,9 @@ export default function SuggestPage() {
                 <p className="text-xs uppercase tracking-wide font-semibold text-orange-100 mb-1">AI Recommendation</p>
                 <h2 className="text-2xl font-bold">{result.dish}</h2>
                 <p className="text-orange-100 mt-1">at {result.restaurant}, {result.city}</p>
+                <p className="mt-2 text-sm font-semibold">
+                  {result.score === null || result.score === undefined ? 'Not rated yet' : `Score ${result.score.toFixed(1)}/10`}
+                </p>
               </div>
               <div className="p-6">
                 <p className="text-gray-700 leading-relaxed">{result.reason}</p>
