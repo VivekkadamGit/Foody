@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { publicOrigin } from '@/lib/http/publicOrigin'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { canDemote, defaultTesterName, isValidEmail } from '@/lib/admin/team'
@@ -28,14 +29,6 @@ async function requireAdmin() {
 
 const REFUSED = "Couldn't save — the change was refused. Has migration 010 been applied?"
 
-function origin(): string {
-  const h = headers()
-  const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000'
-  // On AWS the load balancer reports http (CloudFront talks to it over http); CloudFront's own header has the visitor's.
-  const proto = h.get('cloudfront-forwarded-proto') ?? h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')
-  return `${proto}://${host}`
-}
-
 export async function updateMyName(name: string) {
   const trimmed = name.trim()
   if (!trimmed) throw new Error('Name is required')
@@ -55,7 +48,7 @@ export async function inviteTeammate(email: string) {
 
   const admin = createAdminClient()
   const { data, error } = await admin.auth.admin.inviteUserByEmail(clean, {
-    redirectTo: `${origin()}/admin/reset-password`,
+    redirectTo: `${publicOrigin(headers())}/admin/reset-password`,
   })
   if (error) {
     if (/already (been )?registered|already exists/i.test(error.message)) throw new Error('That email already has an account')

@@ -1,6 +1,9 @@
-# Deploys Chakh to AWS on every push to master (or by hand from the Actions tab).
+# Ships the code to AWS on every push to master (or by hand from the Actions tab): pushes the
+# image, uploads the static files, and deploys the image to the Lightsail container service.
+# The infrastructure itself is Terraform's (terraform/README.md); this workflow never changes it.
+# While the environment is down, it tests and then skips the deploy.
 # Order matters: the new static files reach S3 before the new server starts, so no visitor
-# gets HTML that points at a file that isn't there yet. One-time setup: docs/deploy/aws.md.
+# gets HTML that points at a file that isn't there yet.
 name: Deploy to AWS
 
 on:
@@ -18,7 +21,7 @@ permissions:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
-  STACK_NAME: chakh-app
+  SERVICE: chakh
 
 jobs:
   test:
@@ -39,17 +42,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      # Fails when the environment is destroyed (the role goes with it); that just means "skip".
+      - id: creds
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      - id: env
+        name: Is the AWS environment up?
+        run: |
+          up=false
+          if [ "${{ steps.creds.outcome }}" = success ] \
+            && aws lightsail get-container-services --service-name "$SERVICE" > /dev/null 2>&1; then
+            up=true
+          fi
+          echo "up=$up" >> "$GITHUB_OUTPUT"
+          if [ "$up" = false ]; then
+            echo "::notice::AWS environment is down; nothing deployed. Create it with terraform (terraform/README.md), then run this workflow."
+          fi
+
       - id: ecr
+        if: steps.env.outputs.up == 'true'
         uses: aws-actions/amazon-ecr-login@v2
 
-      - uses: docker/setup-buildx-action@v3
+      - if: steps.env.outputs.up == 'true'
+        uses: docker/setup-buildx-action@v3
 
       - name: Build image
+        if: steps.env.outputs.up == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -65,6 +87,7 @@ jobs:
 
       - name: Push image
         id: image
+        if: steps.env.outputs.up == 'true'
         run: |
           IMAGE=${{ steps.ecr.outputs.registry }}/chakh:${{ github.sha }}
           docker push "$IMAGE"
@@ -72,6 +95,7 @@ jobs:
 
       # Copy the static files out of the image just built, so they match its build exactly.
       - name: Upload static files to S3
+        if: steps.env.outputs.up == 'true'
         run: |
           cid=$(docker create "${{ steps.image.outputs.uri }}")
           mkdir -p out/_next
@@ -85,29 +109,37 @@ jobs:
           aws s3 sync out/brand "s3://${{ vars.STATIC_BUCKET }}/brand" \
             --cache-control "public, max-age=86400"
 
-      - name: Deploy app stack
+      # Everything under /chakh/ in SSM becomes the container's environment. Lightsail switches
+      # over once the new container is healthy; if it never is, the old one keeps serving.
+      - name: Deploy to Lightsail
+        if: steps.env.outputs.up == 'true'
         run: |
-          PREFIX_LIST=$(aws ec2 describe-managed-prefix-lists \
-            --filters Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing \
-            --query 'PrefixLists[0].PrefixListId' --output text)
-          # Waits until the new server is healthy; a failing one is rolled back by ECS.
-          aws cloudformation deploy \
-            --stack-name "$STACK_NAME" \
-            --template-file infra/aws/app.yml \
-            --role-arn "${{ vars.AWS_CFN_EXEC_ROLE_ARN }}" \
-            --capabilities CAPABILITY_IAM \
-            --no-fail-on-empty-changeset \
-            --parameter-overrides \
-              ImageUri="${{ steps.image.outputs.uri }}" \
-              StaticBucketName="${{ vars.STATIC_BUCKET }}" \
-              OriginSecret="${{ secrets.AWS_ORIGIN_SECRET }}" \
-              CloudFrontPrefixListId="$PREFIX_LIST" \
-              DomainName="${{ vars.DOMAIN_NAME }}" \
-              CertificateArn="${{ vars.CERTIFICATE_ARN }}"
+          aws ssm get-parameters-by-path --path /chakh --with-decryption --query Parameters --output json \
+            | jq --arg img "${{ steps.image.outputs.uri }}" '{web: {
+                image: $img,
+                ports: {"3000": "HTTP"},
+                environment: (map({key: (.Name | split("/") | last), value: .Value}) | from_entries)
+              }}' > containers.json
+          VERSION=$(aws lightsail create-container-service-deployment --service-name "$SERVICE" \
+            --containers file://containers.json \
+            --public-endpoint '{"containerName":"web","containerPort":3000,"healthCheck":{"path":"/api/health","successCodes":"200","intervalSeconds":15,"timeoutSeconds":5,"healthyThreshold":2,"unhealthyThreshold":3}}' \
+            --query containerService.nextDeployment.version --output text)
+          rm containers.json
+          for _ in $(seq 1 60); do
+            STATE=$(aws lightsail get-container-service-deployments --service-name "$SERVICE" \
+              --query "deployments[?version==\`$VERSION\`].state | [0]" --output text)
+            echo "Deployment $VERSION: $STATE"
+            [ "$STATE" = ACTIVE ] && exit 0
+            [ "$STATE" = FAILED ] && { echo "::error::Container failed to start; the previous version keeps serving."; exit 1; }
+            sleep 10
+          done
+          echo "::error::Timed out waiting for deployment $VERSION"
+          exit 1
 
       - name: Refresh logo files at the edge
+        if: steps.env.outputs.up == 'true'
         run: |
-          out() { aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
-            --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
-          aws cloudfront create-invalidation --distribution-id "$(out DistributionId)" --paths '/brand/*' > /dev/null
-          echo "Deployed: $(out SiteUrl)" >> "$GITHUB_STEP_SUMMARY"
+          read -r ID DOMAIN < <(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='Chakh'] | [0].[Id, DomainName]" --output text)
+          aws cloudfront create-invalidation --distribution-id "$ID" --paths '/brand/*' > /dev/null
+          echo "Deployed: https://$DOMAIN" >> "$GITHUB_STEP_SUMMARY"
